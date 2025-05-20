@@ -1,16 +1,16 @@
+// src/lib/base.api.ts
 import axios, { AxiosError, AxiosInstance, AxiosResponse } from "axios";
-import { IApiBaseResponse } from "@/api/types";
-// import { useNavigate } from "react-router-dom" ← used from component context
+import type { ApiErrorResponse } from "@/api/types";
 
 export default class BaseApi {
 	protected axiosInstance: AxiosInstance;
 
-	constructor(moduleBaseURL: string) {
-		const baseURL = import.meta.env.VITE_API_BASE_URL + moduleBaseURL;
+	constructor(resourcePath: string) {
+		const baseURL = import.meta.env.VITE_API_BASE_URL + resourcePath;
 
 		this.axiosInstance = axios.create({
 			baseURL,
-			withCredentials: true,
+			withCredentials: true, // for cookies or token handling
 		});
 
 		this.setupInterceptors();
@@ -19,20 +19,27 @@ export default class BaseApi {
 	private setupInterceptors() {
 		this.axiosInstance.interceptors.response.use(
 			(response: AxiosResponse) => response,
-			(error: AxiosError<IApiBaseResponse>) => {
+			(error: AxiosError<ApiErrorResponse>) => {
 				const status = error.response?.status;
+				const data = error.response?.data;
 
-				if (status === 500) {
-					// Optional: replace this with useNavigate() from inside a component
-					console.error("Internal Server Error");
-				} else if (status === 401 || status === 403) {
-					console.warn("Unauthorized or Forbidden");
-				} else {
-					const errorMessage = error.response?.data.message;
-					return Promise.reject(errorMessage);
+				switch (status) {
+					case 401:
+						console.warn("Unauthorized. You may be logged out.");
+						break;
+					case 403:
+						console.warn("Forbidden. Insufficient permissions.");
+						break;
+					case 500:
+						console.error("Internal Server Error");
+						break;
+					default:
+						// Unhandled status
+						break;
 				}
 
-				return Promise.reject(error);
+				// Reject with detailed API error if possible
+				return Promise.reject(data ?? error);
 			}
 		);
 	}

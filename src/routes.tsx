@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import LoginPage from "@/pages/login/LoginPage";
+import LoginPage from "@/pages/auth/LoginPage";
 import { useUserStore } from "@/store/userStore";
 import { JSX } from "react";
 import DashboardPage from "./pages/dashboard/DashboardPage";
