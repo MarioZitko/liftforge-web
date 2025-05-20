@@ -3,6 +3,7 @@ import LoginPage from "@/pages/auth/LoginPage";
 import { useUserStore } from "@/store/userStore";
 import { JSX } from "react";
 import DashboardPage from "./pages/dashboard/DashboardPage";
+import RegisterPage from "./pages/auth/RegisterPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
 	const user = useUserStore((s) => s.user);
@@ -13,6 +14,7 @@ export function AppRoutes() {
 	return (
 		<Routes>
 			<Route path="/login" element={<LoginPage />} />
+			<Route path="/register" element={<RegisterPage />} />
 			<Route
 				path="/dashboard"
 				element={

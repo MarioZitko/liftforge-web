@@ -11,7 +11,12 @@ function App() {
 			<ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
 				<Navbar />
 				<AppRoutes />
-				<Toaster richColors position="bottom-right" />
+				<Toaster
+					richColors
+					position="bottom-right"
+					closeButton
+					theme="system"
+				/>
 			</ThemeProvider>
 		</BrowserRouter>
 	);

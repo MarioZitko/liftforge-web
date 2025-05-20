@@ -39,7 +39,11 @@ export default class BaseApi {
 				}
 
 				// Reject with detailed API error if possible
-				return Promise.reject(data ?? error);
+				return Promise.reject(
+					Array.isArray(data?.message)
+						? data.message.join("\n")
+						: data?.message ?? data ?? error.message ?? "Unknown error"
+				);
 			}
 		);
 	}

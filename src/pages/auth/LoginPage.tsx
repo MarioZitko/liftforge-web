@@ -99,7 +99,10 @@ export default function LoginPage() {
 				</Form>
 
 				<p className="text-xs text-muted-foreground text-center">
-					Don’t have an account? Contact your coach to be invited.
+					Don’t have an account?{" "}
+					<a href="/register" className="text-primary underline">
+						Register here
+					</a>
 				</p>
 			</div>
 		</div>
