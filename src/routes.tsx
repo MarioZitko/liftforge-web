@@ -2,11 +2,13 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "@/pages/auth/LoginPage";
 import { useUserStore } from "@/store/userStore";
 import { JSX } from "react";
-import DashboardPage from "./pages/dashboard/DashboardPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import HomePage from "./pages/HomePage";
 import ConfirmEmailPage from "./pages/auth/ConfirmEmailPage";
 import VerifyEmailRequestPage from "./pages/auth/VerifyEmailRequestPage";
+import { RequireRole } from "./lib/RequireRole";
+import CoachDashboardPage from "./pages/dashboard/CoachDashboardPage";
+import ClientsPage from "./pages/clients/ClientsPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
 	const user = useUserStore((s) => s.user);
@@ -21,11 +23,24 @@ export function AppRoutes() {
 			<Route path="/register" element={<RegisterPage />} />
 			<Route path="/confirm-email" element={<ConfirmEmailPage />} />
 			<Route path="/verify-email" element={<VerifyEmailRequestPage />} />
+
 			<Route
 				path="/dashboard"
 				element={
 					<ProtectedRoute>
-						<DashboardPage />
+						<RequireRole allow={["COACH", "ADMIN"]}>
+							<CoachDashboardPage />
+						</RequireRole>
+					</ProtectedRoute>
+				}
+			/>
+			<Route
+				path="/clients"
+				element={
+					<ProtectedRoute>
+						<RequireRole allow={["COACH", "ADMIN"]}>
+							<ClientsPage />
+						</RequireRole>
 					</ProtectedRoute>
 				}
 			/>
