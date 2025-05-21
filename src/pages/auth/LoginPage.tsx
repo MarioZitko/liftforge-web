@@ -1,8 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useNavigate } from "react-router-dom";
-import AuthApiClient from "@/api/auth/auth.api";
+import { Link, useNavigate } from "react-router-dom";
 
 // UI
 import {
@@ -16,7 +15,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { showError, showSuccess } from "@/components/shared/utils/toast.util";
 
 // Schema
 const loginSchema = z.object({
@@ -27,6 +27,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
+	const { login } = useAuth();
 	const navigate = useNavigate();
 	const form = useForm<LoginFormData>({
 		resolver: zodResolver(loginSchema),
@@ -38,15 +39,11 @@ export default function LoginPage() {
 
 	const onSubmit = async (data: LoginFormData) => {
 		try {
-			const authApi = AuthApiClient.getInstance();
-			await authApi.login(data);
-
-			toast.success("Login successful. Redirecting...");
+			await login(data); // useAuth().login
+			showSuccess("Login successful, redirecting to dashboard...");
 			navigate("/dashboard");
 		} catch (err) {
-			toast.error("Login failed", {
-				description: typeof err === "string" ? err : "Invalid credentials",
-			});
+			showError(err, "Invalid credentials");
 		}
 	};
 
@@ -103,6 +100,13 @@ export default function LoginPage() {
 					<a href="/register" className="text-primary underline">
 						Register here
 					</a>
+				</p>
+
+				<p className="text-xs text-muted-foreground text-center">
+					Haven’t received an email?{" "}
+					<Link to="/verify-email" className="text-primary underline">
+						Resend verification
+					</Link>
 				</p>
 			</div>
 		</div>

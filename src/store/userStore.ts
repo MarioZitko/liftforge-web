@@ -1,9 +1,9 @@
 import { create } from "zustand";
-import { User } from "@/api/users/users.types";
+import { GetMeResponse } from "@/api/auth/auth.types";
 
 interface UserStore {
-	user: User | null;
-	setUser: (user: User | null) => void;
+	user: GetMeResponse | null; // ✅ not `User`
+	setUser: (user: GetMeResponse | null) => void;
 	logout: () => void;
 }
 

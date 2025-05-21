@@ -29,6 +29,13 @@ export default class AuthApiClient extends BaseApi {
 		return AuthApiClient.instance;
 	}
 
+	public async getMe(): Promise<ApiSuccessResponse<GetMeResponse>> {
+		const res = await this.axiosInstance.get<ApiSuccessResponse<GetMeResponse>>(
+			"/me"
+		);
+		return res.data;
+	}
+
 	public async login(
 		data: LoginRequest
 	): Promise<ApiSuccessResponse<LoginResponse>> {
@@ -55,13 +62,6 @@ export default class AuthApiClient extends BaseApi {
 			ApiSuccessResponse<RefreshTokenResponse>
 		>("/refresh", data);
 		Cookies.set("token", res.data.data.accessToken);
-		return res.data;
-	}
-
-	public async getMe(): Promise<ApiSuccessResponse<GetMeResponse>> {
-		const res = await this.axiosInstance.get<ApiSuccessResponse<GetMeResponse>>(
-			"/me"
-		);
 		return res.data;
 	}
 

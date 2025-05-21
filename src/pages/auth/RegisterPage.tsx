@@ -17,9 +17,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
+import { showError, showSuccess } from "@/components/shared/utils/toast.util";
 
 // Validation schema
 const registerSchema = z.object({
@@ -51,14 +51,10 @@ export default function RegisterPage() {
 		try {
 			const authApi = AuthApiClient.getInstance();
 			await authApi.register(data);
-			toast.success(
-				"Registration successful. Confirm your email so you can login."
-			);
+			showSuccess("Registration successful, Confirm your email to log in.");
 			navigate("/login");
 		} catch (err) {
-			toast.error("Registration failed", {
-				description: typeof err === "string" ? err : "Something went wrong.",
-			});
+			showError(err, "Registration failed");
 		}
 	};
 

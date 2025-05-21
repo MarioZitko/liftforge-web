@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { useUserStore } from "@/store/userStore";
 import { DarkModeToggle } from "./DarkModeToggle";
 import { navLinkClass } from "@/components/shared/utils/navLinkUtils"; // ✅ Updated import
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 const links = [
 	{ to: "/dashboard", label: "Dashboard" },
@@ -13,12 +13,12 @@ const links = [
 
 export default function PrivateNavbar() {
 	const [menuOpen, setMenuOpen] = useState(false);
-	const logout = useUserStore((s) => s.logout);
+	const { logout } = useAuth();
 
 	return (
 		<header className="sticky top-0 z-50 bg-background border-b border-gray-200 dark:border-gray-700 shadow-sm">
 			<div className="mx-auto max-w-screen-xl flex items-center justify-between px-4 py-3">
-				<NavLink to="/dashboard" className="text-lg font-bold">
+				<NavLink to="/" className="text-lg font-bold">
 					LiftForge
 				</NavLink>
 
