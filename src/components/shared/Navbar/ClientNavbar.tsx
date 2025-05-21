@@ -2,54 +2,41 @@ import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 
-import { DarkModeToggle } from "./DarkModeToggle";
+import { clientLinks } from ".//navLinks";
 import { navLinkClass } from "../utils/navLinkUtils";
+import { useAuth } from "@/hooks/useAuth";
+import { DarkModeToggle } from "./DarkModeToggle";
 import MobileNavMenu from "./MobileNavMenu";
 
-const links = [
-	{ to: "/features", label: "Features" },
-	{ to: "/pricing", label: "Pricing" },
-	{ to: "/about", label: "About Us" },
-	{ to: "/contact", label: "Contact" },
-];
-
-export default function PublicNavbar() {
+export default function ClientNavbar() {
 	const [menuOpen, setMenuOpen] = useState(false);
+	const { logout } = useAuth();
 
 	return (
 		<header className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
 			<div className="mx-auto max-w-screen-xl flex items-center justify-between px-4 py-3">
 				<NavLink to="/" className="text-lg font-bold">
-					LiftForge
+					LiftForge Client
 				</NavLink>
 
 				{/* Desktop Menu */}
 				<div className="hidden md:flex items-center gap-6">
-					{links.map(({ to, label }) => (
+					{clientLinks.map(({ to, label }) => (
 						<NavLink
 							key={to}
 							to={to}
 							className={({ isActive }) => navLinkClass(isActive)}
 						>
-							<span className="relative z-10">{label}</span>
-							<span
-								className="absolute bottom-0 left-1/2 h-[2px] w-0 bg-primary
-									transform -translate-x-1/2 scale-x-0 origin-center
-									transition-all duration-300 group-hover:w-full group-hover:scale-x-100"
-							/>
+							{label}
 						</NavLink>
 					))}
-				</div>
-
-				{/* Desktop Right Actions */}
-				<div className="hidden md:flex items-center gap-6">
 					<DarkModeToggle />
-					<NavLink
-						to="/login"
-						className={({ isActive }) => navLinkClass(isActive)}
+					<button
+						onClick={logout}
+						className="text-sm font-medium text-red-500 hover:text-red-600"
 					>
-						Login
-					</NavLink>
+						Logout
+					</button>
 				</div>
 
 				{/* Mobile Toggle */}
@@ -61,21 +48,19 @@ export default function PublicNavbar() {
 				</button>
 			</div>
 
-			{/* Mobile Menu */}
 			<MobileNavMenu
-				links={links}
+				links={clientLinks}
 				menuOpen={menuOpen}
 				toggleMenu={() => setMenuOpen(false)}
 				extras={
 					<>
 						<DarkModeToggle />
-						<NavLink
-							to="/login"
-							onClick={() => setMenuOpen(false)}
-							className={({ isActive }) => navLinkClass(isActive)}
+						<button
+							onClick={logout}
+							className="text-left px-2 py-1 text-sm font-medium text-red-500 hover:text-red-600"
 						>
-							Login
-						</NavLink>
+							Logout
+						</button>
 					</>
 				}
 			/>

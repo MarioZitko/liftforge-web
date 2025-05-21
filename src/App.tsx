@@ -4,7 +4,7 @@ import "./App.css";
 import { AppRoutes } from "./routes";
 import Navbar from "@/components/shared/Navbar/Navbar";
 import { Toaster } from "sonner";
-import { AuthProvider } from "./hooks/authProvider";
+import { AuthProvider } from "./hooks/AuthProvider";
 
 function App() {
 	return (
