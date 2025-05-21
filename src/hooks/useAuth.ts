@@ -1,29 +1,29 @@
 import { useEffect, useState } from "react";
-import { usersApi } from "@/api/users/users.api";
-import { authApi } from "@/api/auth/auth.api";
+import authApiClient from "@/api/auth/auth.api";
 import { useUserStore } from "@/store/userStore";
 import type { LoginRequest } from "@/api/auth/auth.types";
 
 export function useAuth() {
 	const { user, setUser, logout: clearUser } = useUserStore();
 	const [loading, setLoading] = useState(true);
+	const authApi = authApiClient.getInstance();
 
 	useEffect(() => {
 		if (!user) {
-			usersApi
+			authApi
 				.getMe()
-				.then(setUser)
+				.then((res) => setUser(res.data))
 				.catch(() => clearUser())
 				.finally(() => setLoading(false));
 		} else {
 			setLoading(false);
 		}
-	}, [user, setUser, clearUser]);
+	}, [authApi, user, setUser, clearUser]);
 
 	const login = async (data: LoginRequest) => {
 		await authApi.login(data);
-		const currentUser = await usersApi.getMe();
-		setUser(currentUser);
+		const currentUser = await authApi.getMe();
+		setUser(currentUser.data);
 	};
 
 	const logout = () => {
