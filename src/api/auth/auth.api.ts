@@ -1,12 +1,9 @@
-// api/auth/auth.api.ts
-import Cookies from "js-cookie";
+// src/api/auth/auth.api.ts
 import BaseApi from "@/lib/base.api";
 import {
 	LoginRequest,
-	LoginResponse,
 	RegisterRequest,
 	RefreshTokenRequest,
-	RefreshTokenResponse,
 	GetMeResponse,
 	RequestPasswordResetRequest,
 	ResetPasswordRequest,
@@ -38,11 +35,10 @@ export default class AuthApiClient extends BaseApi {
 
 	public async login(
 		data: LoginRequest
-	): Promise<ApiSuccessResponse<LoginResponse>> {
+	): Promise<ApiSuccessResponse<{ message: string }>> {
 		const res = await this.axiosInstance.post<
-			ApiSuccessResponse<LoginResponse>
+			ApiSuccessResponse<{ message: string }>
 		>("/login", data);
-		Cookies.set("token", res.data.data.accessToken);
 		return res.data;
 	}
 
@@ -57,11 +53,10 @@ export default class AuthApiClient extends BaseApi {
 
 	public async refreshToken(
 		data: RefreshTokenRequest
-	): Promise<ApiSuccessResponse<RefreshTokenResponse>> {
+	): Promise<ApiSuccessResponse<{ accessToken: string }>> {
 		const res = await this.axiosInstance.post<
-			ApiSuccessResponse<RefreshTokenResponse>
+			ApiSuccessResponse<{ accessToken: string }>
 		>("/refresh", data);
-		Cookies.set("token", res.data.data.accessToken);
 		return res.data;
 	}
 
@@ -101,8 +96,8 @@ export default class AuthApiClient extends BaseApi {
 		return res.data;
 	}
 
-	public logout() {
-		Cookies.remove("token");
+	public async logout(): Promise<void> {
+		await this.axiosInstance.post("/logout");
 		window.location.href = "/login";
 	}
 }

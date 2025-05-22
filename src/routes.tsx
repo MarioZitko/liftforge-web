@@ -9,6 +9,7 @@ import VerifyEmailRequestPage from "./pages/auth/VerifyEmailRequestPage";
 import { RequireRole } from "./lib/RequireRole";
 import CoachDashboardPage from "./pages/dashboard/CoachDashboardPage";
 import ClientsPage from "./pages/clients/ClientsPage";
+import OAuthCallbackPage from "./pages/auth/OAuthCallbackPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
 	const user = useUserStore((s) => s.user);
@@ -23,6 +24,7 @@ export function AppRoutes() {
 			<Route path="/register" element={<RegisterPage />} />
 			<Route path="/confirm-email" element={<ConfirmEmailPage />} />
 			<Route path="/verify-email" element={<VerifyEmailRequestPage />} />
+			<Route path="/oauth-callback" element={<OAuthCallbackPage />} />
 
 			<Route
 				path="/dashboard"

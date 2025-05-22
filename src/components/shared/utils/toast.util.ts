@@ -2,7 +2,7 @@ import { toast } from "sonner";
 import type { ApiErrorResponse } from "@/api/types";
 
 export function showSuccess(message: string) {
-	toast.success(message); // 👈 no description
+	toast.success(message);
 }
 
 export function showError(
@@ -26,5 +26,5 @@ export function showError(
 		message = fallbackMessage;
 	}
 
-	toast.error(message); // 👈 simplified
+	toast.error(message);
 }

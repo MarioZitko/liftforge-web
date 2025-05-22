@@ -1,6 +1,5 @@
 // src/lib/base.api.ts
 import axios, { AxiosError, AxiosInstance, AxiosResponse } from "axios";
-import Cookies from "js-cookie"; // ✅ import cookie reader
 import type { ApiErrorResponse } from "@/api/types";
 
 export default class BaseApi {
@@ -11,21 +10,14 @@ export default class BaseApi {
 
 		this.axiosInstance = axios.create({
 			baseURL,
-			withCredentials: true,
+			withCredentials: true, // ✅ Required for cookie-based auth
 		});
 
 		this.setupInterceptors();
 	}
 
 	private setupInterceptors() {
-		// ✅ REQUEST INTERCEPTOR: Attach Authorization header if token is present
 		this.axiosInstance.interceptors.request.use((config) => {
-			const token = Cookies.get("token");
-
-			if (token) {
-				config.headers.Authorization = `Bearer ${token}`;
-			}
-
 			return config;
 		});
 

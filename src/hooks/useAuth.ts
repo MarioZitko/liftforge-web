@@ -18,7 +18,7 @@ export function useAuth() {
 		} else {
 			setLoading(false);
 		}
-	}, [authApi, user, setUser, clearUser]);
+	}, [user]);
 
 	const login = async (data: LoginRequest) => {
 		await authApi.login(data);
