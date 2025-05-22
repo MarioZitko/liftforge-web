@@ -96,6 +96,11 @@ export default class AuthApiClient extends BaseApi {
 		return res.data;
 	}
 
+	public async finalizeOAuth(data: { role: "CLIENT" | "COACH"; name: string }) {
+		const res = await this.axiosInstance.post("/oauth-finalize", data);
+		return res.data;
+	}
+
 	public async logout(): Promise<void> {
 		await this.axiosInstance.post("/logout");
 		window.location.href = "/login";
