@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { showError, showSuccess } from "@/components/shared/utils/toast.util";
+import OAuthButtons from "@/components/shared/Auth/OAuthButtons";
 
 // Schema
 const loginSchema = z.object({
@@ -94,6 +95,8 @@ export default function LoginPage() {
 						</Button>
 					</form>
 				</Form>
+
+				<OAuthButtons />
 
 				<p className="text-xs text-muted-foreground text-center">
 					Don’t have an account?{" "}
