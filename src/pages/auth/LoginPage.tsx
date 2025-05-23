@@ -93,10 +93,10 @@ export default function LoginPage() {
 						<Button type="submit" className={cn("w-full")}>
 							Sign In
 						</Button>
-
-						<OAuthButtons />
 					</form>
 				</Form>
+
+				<OAuthButtons />
 
 				<p className="text-xs text-muted-foreground text-center">
 					Don’t have an account?{" "}
