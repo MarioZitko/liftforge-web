@@ -8,25 +8,17 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { PaginationControls } from "./PaginationControls";
-import type { ServerQuery, Column } from "./types";
 import { cn } from "@/lib/utils";
+import { ServerTableProps } from "./types";
 
-interface ServerTableProps<T> {
-	data: T[];
-	columns: Column<T>[];
-	totalCount: number;
-	loading: boolean;
-	query: ServerQuery;
-	setQuery: (q: ServerQuery) => void;
-}
-
-export function ServerTable<T extends { id: string }>({
+export function ServerTable<T>({
 	data,
 	columns,
 	totalCount,
 	loading,
 	query,
 	setQuery,
+	getRowId,
 }: ServerTableProps<T>) {
 	const handleSort = (key: string) => {
 		const same = key === query.orderByProperty;
@@ -82,7 +74,7 @@ export function ServerTable<T extends { id: string }>({
 							</TableRow>
 						) : (
 							data.map((row) => (
-								<TableRow key={row.id}>
+								<TableRow key={getRowId(row)}>
 									{columns.map((col) => (
 										<TableCell
 											key={String(col.key)}

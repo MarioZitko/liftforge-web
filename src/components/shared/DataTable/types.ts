@@ -6,9 +6,19 @@ export interface ServerQuery {
 	ascending?: boolean;
 }
 
-export interface Column<T> {
-	label: string;
-	key: keyof T;
-	render?: (row: T) => React.ReactNode;
-	sortable?: boolean;
+export interface ServerTableProps<T> {
+	data: T[];
+	columns: Column<T>[];
+	totalCount: number;
+	loading: boolean;
+	query: ServerQuery;
+	setQuery: (q: ServerQuery) => void;
+	getRowId: (row: T) => string;
 }
+
+export type Column<T> = {
+	key: keyof T;
+	label: string;
+	sortable?: boolean;
+	render?: (row: T) => React.ReactNode;
+};

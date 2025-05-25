@@ -144,13 +144,14 @@ export default function AdminUsersPage() {
 						</Button>
 					</CardHeader>
 					<CardContent>
-						<ServerTable
+						<ServerTable<User>
 							data={paged}
 							columns={columns}
 							totalCount={filtered.length}
 							loading={loading}
 							query={query}
 							setQuery={setQuery}
+							getRowId={(row) => row.id}
 						/>
 					</CardContent>
 				</Card>
