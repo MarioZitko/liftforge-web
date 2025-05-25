@@ -29,7 +29,7 @@ export default function OAuthFinalizePage() {
 		try {
 			await authApi.finalizeOAuth({ name, role });
 			showSuccess("You're now registered!");
-			navigate("/dashboard");
+			navigate("/oauth-callback");
 		} catch (err) {
 			showError(err, "OAuth finalization failed");
 			navigate("/login");
