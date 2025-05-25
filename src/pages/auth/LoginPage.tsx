@@ -99,6 +99,13 @@ export default function LoginPage() {
 				<OAuthButtons />
 
 				<p className="text-xs text-muted-foreground text-center">
+					Forgot your password?{" "}
+					<Link to="/forgot-password" className="text-primary underline">
+						Reset it here
+					</Link>
+				</p>
+
+				<p className="text-xs text-muted-foreground text-center">
 					Don’t have an account?{" "}
 					<a href="/register" className="text-primary underline">
 						Register here

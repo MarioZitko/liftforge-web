@@ -11,6 +11,10 @@ import CoachDashboardPage from "./pages/dashboard/CoachDashboardPage";
 import ClientsPage from "./pages/clients/ClientsPage";
 import OAuthCallbackPage from "./pages/auth/OAuthCallbackPage";
 import OAuthFinalizePage from "./pages/auth/OAuthFinalizePage";
+import AdminPage from "./pages/admin/AdminPage";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import RequestPasswordResetPage from "./pages/auth/RequestPasswordResetPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
 	const user = useUserStore((s) => s.user);
@@ -25,8 +29,31 @@ export function AppRoutes() {
 			<Route path="/register" element={<RegisterPage />} />
 			<Route path="/confirm-email" element={<ConfirmEmailPage />} />
 			<Route path="/verify-email" element={<VerifyEmailRequestPage />} />
+			<Route path="/reset-password" element={<ResetPasswordPage />} />
+			<Route path="/forgot-password" element={<RequestPasswordResetPage />} />
 			<Route path="/oauth-callback" element={<OAuthCallbackPage />} />
 			<Route path="/oauth-finalize" element={<OAuthFinalizePage />} />
+
+			<Route
+				path="/admin"
+				element={
+					<ProtectedRoute>
+						<RequireRole allow={["ADMIN"]}>
+							<AdminPage />
+						</RequireRole>
+					</ProtectedRoute>
+				}
+			/>
+			<Route
+				path="/admin/users"
+				element={
+					<ProtectedRoute>
+						<RequireRole allow={["ADMIN"]}>
+							<AdminUsersPage />
+						</RequireRole>
+					</ProtectedRoute>
+				}
+			/>
 
 			<Route
 				path="/dashboard"

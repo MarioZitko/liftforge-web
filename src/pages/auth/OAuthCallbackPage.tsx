@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/store/userStore";
 import authApiClient from "@/api/auth/auth.api";
-import { showError, showSuccess } from "@/components/shared/utils/toast.util";
+import { showError } from "@/components/shared/utils/toast.util";
 
 export default function OAuthCallbackPage() {
 	const navigate = useNavigate();
@@ -14,10 +14,8 @@ export default function OAuthCallbackPage() {
 	useEffect(() => {
 		const handleOAuth = async () => {
 			try {
-				// No more query param tokens – use cookies
 				const res = await authApi.getMe();
 				setUser(res.data);
-				showSuccess("Logged in successfully!");
 				navigate("/dashboard");
 			} catch (err) {
 				showError(err);
