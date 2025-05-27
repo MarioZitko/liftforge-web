@@ -129,11 +129,13 @@ export default function AdminUsersPage() {
 				<h1 className="text-2xl font-bold">User Administration</h1>
 
 				<Card>
-					<CardHeader className="flex flex-row justify-between items-center">
+					<CardHeader className="flex flex-col items-center text-center">
 						<div>
 							<CardTitle>All Users</CardTitle>
 							<CardDescription>Manage registered users</CardDescription>
 						</div>
+					</CardHeader>
+					<CardContent>
 						<Button
 							onClick={() => {
 								setEditUser(null);
@@ -142,8 +144,6 @@ export default function AdminUsersPage() {
 						>
 							Create User
 						</Button>
-					</CardHeader>
-					<CardContent>
 						<ServerTable<User>
 							data={paged}
 							columns={columns}
