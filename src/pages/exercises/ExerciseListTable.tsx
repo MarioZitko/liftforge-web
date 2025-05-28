@@ -17,13 +17,6 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { IExerciseListTableProps } from "./types";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 
 export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 	const exercisesApi = ExercisesApiClient.getInstance();
@@ -36,6 +29,7 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		ascending: true,
 	});
 
+	const [filterValue, setFilterValue] = useState("all");
 	const [exercises, setExercises] = useState<Exercise[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [editExercise, setEditExercise] = useState<Exercise | null>(null);
@@ -44,14 +38,12 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		null
 	);
 
-	const [filter, setFilter] = useState<"mine" | "all">("all");
-
 	const fetchExercises = async () => {
 		setLoading(true);
 		try {
 			const data =
 				role === "COACH"
-					? await exercisesApi.getCoachExercises(filter === "mine")
+					? await exercisesApi.getCoachExercises(filterValue === "mine")
 					: await exercisesApi.getAll();
 			setExercises(data);
 		} catch {
@@ -63,7 +55,7 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 
 	useEffect(() => {
 		fetchExercises();
-	}, [role, filter]);
+	}, [role, filterValue]);
 
 	const handleDelete = async (id: number) => {
 		try {
@@ -115,7 +107,7 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 
 	if (role === "COACH") {
 		columns.push({
-			key: "id", // must be valid key
+			key: "id",
 			label: "Actions",
 			render: (e) => (
 				<div className="flex gap-2">
@@ -141,23 +133,23 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		});
 	}
 
+	const filters =
+		role === "COACH"
+			? [
+					{
+						label: "Exercises",
+						value: filterValue,
+						onChange: (val: string) => setFilterValue(val),
+						options: [
+							{ label: "My Exercises", value: "mine" },
+							{ label: "Shared + My Exercises", value: "all" },
+						],
+					},
+			  ]
+			: [];
+
 	return (
 		<>
-			<div className="mb-4 flex justify-end">
-				<Select
-					value={filter}
-					onValueChange={(val) => setFilter(val as "mine" | "all")}
-				>
-					<SelectTrigger className="w-[220px]">
-						<SelectValue placeholder="Filter exercises" />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="mine">My Exercises</SelectItem>
-						<SelectItem value="all">Shared + My Exercises</SelectItem>
-					</SelectContent>
-				</Select>
-			</div>
-
 			<ServerTable<Exercise>
 				data={paged}
 				columns={columns}
@@ -166,6 +158,12 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 				query={query}
 				setQuery={setQuery}
 				getRowId={(e) => e.id.toString()}
+				onCreate={() => {
+					setEditExercise(null);
+					setShowModal(true);
+				}}
+				createLabel="Add Exercise"
+				filters={filters}
 			/>
 
 			{role === "COACH" && (
