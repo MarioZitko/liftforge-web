@@ -46,22 +46,24 @@ export function ServerTable<T>({
 
 	return (
 		<div className="space-y-4">
-			<div className="flex flex-wrap items-center gap-4 justify-between">
-				<div className="flex flex-wrap items-center gap-4">
+			<div className="overflow-x-auto">
+				<div className="flex items-center gap-4 whitespace-nowrap pb-2 min-w-full">
+					{/* Search */}
 					<Input
 						placeholder="Search..."
 						value={query.searchText ?? ""}
 						onChange={(e) => handleSearch(e.target.value)}
-						className="max-w-sm"
+						className="w-[200px] shrink-0"
 					/>
 
+					{/* Filters */}
 					{filters.slice(0, 4).map((filter, index) => (
 						<Select
 							key={index}
 							value={filter.value || "All"}
 							onValueChange={(val) => filter.onChange(val === "All" ? "" : val)}
 						>
-							<SelectTrigger className="w-[200px]">
+							<SelectTrigger className="w-[200px] shrink-0">
 								<SelectValue placeholder={filter.label} />
 							</SelectTrigger>
 							<SelectContent>
@@ -73,9 +75,14 @@ export function ServerTable<T>({
 							</SelectContent>
 						</Select>
 					))}
-				</div>
 
-				{onCreate && <Button onClick={onCreate}>{createLabel}</Button>}
+					{/* Add Button */}
+					{onCreate && (
+						<Button onClick={onCreate} className="shrink-0">
+							{createLabel}
+						</Button>
+					)}
+				</div>
 			</div>
 
 			<div className="rounded-md border">
