@@ -7,6 +7,14 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+	Select,
+	SelectTrigger,
+	SelectContent,
+	SelectItem,
+	SelectValue,
+} from "@/components/ui/select";
 import { PaginationControls } from "./PaginationControls";
 import { cn } from "@/lib/utils";
 import { ServerTableProps } from "./types";
@@ -19,6 +27,9 @@ export function ServerTable<T>({
 	query,
 	setQuery,
 	getRowId,
+	onCreate,
+	createLabel = "Add New",
+	filters = [],
 }: ServerTableProps<T>) {
 	const handleSort = (key: string) => {
 		const same = key === query.orderByProperty;
@@ -35,12 +46,37 @@ export function ServerTable<T>({
 
 	return (
 		<div className="space-y-4">
-			<Input
-				placeholder="Search..."
-				value={query.searchText ?? ""}
-				onChange={(e) => handleSearch(e.target.value)}
-				className="max-w-sm"
-			/>
+			<div className="flex flex-wrap items-center gap-4 justify-between">
+				<div className="flex flex-wrap items-center gap-4">
+					<Input
+						placeholder="Search..."
+						value={query.searchText ?? ""}
+						onChange={(e) => handleSearch(e.target.value)}
+						className="max-w-sm"
+					/>
+
+					{filters.slice(0, 4).map((filter, index) => (
+						<Select
+							key={index}
+							value={filter.value || "All"}
+							onValueChange={(val) => filter.onChange(val === "All" ? "" : val)}
+						>
+							<SelectTrigger className="w-[200px]">
+								<SelectValue placeholder={filter.label} />
+							</SelectTrigger>
+							<SelectContent>
+								{filter.options.map((opt) => (
+									<SelectItem key={opt.value} value={opt.value}>
+										{opt.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					))}
+				</div>
+
+				{onCreate && <Button onClick={onCreate}>{createLabel}</Button>}
+			</div>
 
 			<div className="rounded-md border">
 				<Table className="w-full table-fixed text-center">
@@ -50,7 +86,7 @@ export function ServerTable<T>({
 								<TableHead
 									key={String(col.key)}
 									className={cn(
-										"px-4 py-2 text-center", // 👈 Added text-center
+										"px-4 py-2 text-center",
 										col.sortable && "cursor-pointer hover:underline"
 									)}
 									onClick={() => col.sortable && handleSort(String(col.key))}

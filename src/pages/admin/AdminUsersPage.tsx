@@ -9,7 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ServerTable } from "@/components/shared/DataTable/ServerTable";
 import { useEffect, useState } from "react";
-import { Column, ServerQuery } from "@/components/shared/DataTable/types";
+import {
+	Column,
+	ServerQuery,
+	TableFilter,
+} from "@/components/shared/DataTable/types";
 import { User } from "@/api/users/users.types";
 import UsersApiClient from "@/api/users/users.api";
 import { showError, showSuccess } from "@/components/shared/utils/toast.util";
@@ -42,6 +46,10 @@ export default function AdminUsersPage() {
 	const [showModal, setShowModal] = useState(false);
 	const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
+	// Filter states
+	const [roleFilter, setRoleFilter] = useState("");
+	const [verifiedFilter, setVerifiedFilter] = useState("");
+
 	const fetchUsers = () => {
 		setLoading(true);
 		usersApi
@@ -63,9 +71,19 @@ export default function AdminUsersPage() {
 		}
 	};
 
-	const filtered = users.filter((u) =>
-		u.email.toLowerCase().includes((query.searchText ?? "").toLowerCase())
-	);
+	const filtered = users
+		.filter((u) =>
+			u.email.toLowerCase().includes((query.searchText ?? "").toLowerCase())
+		)
+		.filter((u) => (roleFilter ? u.role === roleFilter : true))
+		.filter((u) =>
+			verifiedFilter === "verified"
+				? u.emailVerified
+				: verifiedFilter === "unverified"
+				? !u.emailVerified
+				: true
+		);
+
 	const sorted = [...filtered].sort((a, b) => {
 		const key = query.orderByProperty as keyof User;
 		const valA = a[key] ?? "";
@@ -74,6 +92,7 @@ export default function AdminUsersPage() {
 			? String(valA).localeCompare(String(valB))
 			: String(valB).localeCompare(String(valA));
 	});
+
 	const paged = sorted.slice(
 		(query.pageNumber - 1) * query.pageSize,
 		query.pageNumber * query.pageSize
@@ -123,6 +142,31 @@ export default function AdminUsersPage() {
 		},
 	];
 
+	// Filters
+	const filters: TableFilter[] = [
+		{
+			label: "Role",
+			value: roleFilter,
+			options: [
+				{ label: "All", value: "All" },
+				{ label: "Admin", value: "ADMIN" },
+				{ label: "Coach", value: "COACH" },
+				{ label: "Client", value: "CLIENT" },
+			],
+			onChange: setRoleFilter,
+		},
+		{
+			label: "Verification",
+			value: verifiedFilter,
+			options: [
+				{ label: "All", value: "All" },
+				{ label: "Verified", value: "verified" },
+				{ label: "Unverified", value: "unverified" },
+			],
+			onChange: setVerifiedFilter,
+		},
+	];
+
 	return (
 		<>
 			<div className="space-y-6 px-4 py-6 max-w-screen-xl mx-auto">
@@ -136,14 +180,6 @@ export default function AdminUsersPage() {
 						</div>
 					</CardHeader>
 					<CardContent>
-						<Button
-							onClick={() => {
-								setEditUser(null);
-								setShowModal(true);
-							}}
-						>
-							Create User
-						</Button>
 						<ServerTable<User>
 							data={paged}
 							columns={columns}
@@ -152,6 +188,12 @@ export default function AdminUsersPage() {
 							query={query}
 							setQuery={setQuery}
 							getRowId={(row) => row.id}
+							onCreate={() => {
+								setEditUser(null);
+								setShowModal(true);
+							}}
+							createLabel="Create User"
+							filters={filters}
 						/>
 					</CardContent>
 				</Card>

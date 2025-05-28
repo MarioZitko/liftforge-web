@@ -6,14 +6,31 @@ export interface ServerQuery {
 	ascending?: boolean;
 }
 
+export interface TableFilterOption {
+	label: string;
+	value: string;
+}
+
+export interface TableFilter {
+	label: string;
+	value: string;
+	options: TableFilterOption[];
+	onChange: (value: string) => void;
+}
+
 export interface ServerTableProps<T> {
 	data: T[];
 	columns: Column<T>[];
 	totalCount: number;
 	loading: boolean;
 	query: ServerQuery;
-	setQuery: (q: ServerQuery) => void;
+	setQuery: (query: ServerQuery) => void;
 	getRowId: (row: T) => string;
+
+	// New
+	onCreate?: () => void;
+	createLabel?: string;
+	filters?: TableFilter[]; // max 4 supported
 }
 
 export type Column<T> = {
