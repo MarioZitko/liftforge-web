@@ -121,9 +121,13 @@ export function ServerTable<T>({
 									{columns.map((col) => (
 										<TableCell
 											key={String(col.key)}
-											className="px-4 py-2 text-center"
+											className="px-4 py-2 text-center justify-center items-center"
 										>
-											{col.render ? col.render(row) : (row[col.key] as string)}
+											<div className="flex justify-center items-center min-h-[36px]">
+												{col.render
+													? col.render(row)
+													: (row[col.key] as string)}
+											</div>
 										</TableCell>
 									))}
 								</TableRow>

@@ -17,6 +17,7 @@ import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import RequestPasswordResetPage from "./pages/auth/RequestPasswordResetPage";
 import CoachExercisesPage from "./pages/exercises/CoachExercisesPage";
 import ClientExercisesPage from "./pages/exercises/ClientExercisesPage";
+import AdminExercisesPage from "./pages/admin/AdminExercisesPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
 	const user = useUserStore((s) => s.user);
@@ -52,6 +53,16 @@ export function AppRoutes() {
 					<ProtectedRoute>
 						<RequireRole allow={["ADMIN"]}>
 							<AdminUsersPage />
+						</RequireRole>
+					</ProtectedRoute>
+				}
+			/>
+			<Route
+				path="/admin/exercises"
+				element={
+					<ProtectedRoute>
+						<RequireRole allow={["ADMIN"]}>
+							<AdminExercisesPage />
 						</RequireRole>
 					</ProtectedRoute>
 				}
@@ -93,7 +104,7 @@ export function AppRoutes() {
 				path="/client/exercises"
 				element={
 					<ProtectedRoute>
-						<RequireRole allow={["CLIENT"]}>
+						<RequireRole allow={["CLIENT", "ADMIN"]}>
 							<ClientExercisesPage />
 						</RequireRole>
 					</ProtectedRoute>

@@ -1,3 +1,5 @@
+import { User } from "../users/users.types";
+
 // src/api/exercises/exercises.types.ts
 export interface Exercise {
 	id: number;
@@ -5,6 +7,7 @@ export interface Exercise {
 	description?: string;
 	tutorialUrl?: string;
 	createdById?: string;
+	createdBy?: User;
 	updatedById?: string;
 	createdAt?: string;
 	updatedAt?: string;
