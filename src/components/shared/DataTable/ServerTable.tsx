@@ -7,26 +7,29 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+	Select,
+	SelectTrigger,
+	SelectContent,
+	SelectItem,
+	SelectValue,
+} from "@/components/ui/select";
 import { PaginationControls } from "./PaginationControls";
-import type { ServerQuery, Column } from "./types";
 import { cn } from "@/lib/utils";
+import { ServerTableProps } from "./types";
 
-interface ServerTableProps<T> {
-	data: T[];
-	columns: Column<T>[];
-	totalCount: number;
-	loading: boolean;
-	query: ServerQuery;
-	setQuery: (q: ServerQuery) => void;
-}
-
-export function ServerTable<T extends { id: string }>({
+export function ServerTable<T>({
 	data,
 	columns,
 	totalCount,
 	loading,
 	query,
 	setQuery,
+	getRowId,
+	onCreate,
+	createLabel = "Add New",
+	filters = [],
 }: ServerTableProps<T>) {
 	const handleSort = (key: string) => {
 		const same = key === query.orderByProperty;
@@ -43,12 +46,44 @@ export function ServerTable<T extends { id: string }>({
 
 	return (
 		<div className="space-y-4">
-			<Input
-				placeholder="Search..."
-				value={query.searchText ?? ""}
-				onChange={(e) => handleSearch(e.target.value)}
-				className="max-w-sm"
-			/>
+			<div className="overflow-x-auto">
+				<div className="flex items-center gap-4 whitespace-nowrap pb-2 min-w-full">
+					{/* Search */}
+					<Input
+						placeholder="Search..."
+						value={query.searchText ?? ""}
+						onChange={(e) => handleSearch(e.target.value)}
+						className="w-[200px] shrink-0"
+					/>
+
+					{/* Filters */}
+					{filters.slice(0, 4).map((filter, index) => (
+						<Select
+							key={index}
+							value={filter.value || "All"}
+							onValueChange={(val) => filter.onChange(val === "All" ? "" : val)}
+						>
+							<SelectTrigger className="w-[200px] shrink-0">
+								<SelectValue placeholder={filter.label} />
+							</SelectTrigger>
+							<SelectContent>
+								{filter.options.map((opt) => (
+									<SelectItem key={opt.value} value={opt.value}>
+										{opt.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					))}
+
+					{/* Add Button */}
+					{onCreate && (
+						<Button onClick={onCreate} className="shrink-0">
+							{createLabel}
+						</Button>
+					)}
+				</div>
+			</div>
 
 			<div className="rounded-md border">
 				<Table className="w-full table-fixed text-center">
@@ -58,7 +93,7 @@ export function ServerTable<T extends { id: string }>({
 								<TableHead
 									key={String(col.key)}
 									className={cn(
-										"px-4 py-2 text-center", // 👈 Added text-center
+										"px-4 py-2 text-center",
 										col.sortable && "cursor-pointer hover:underline"
 									)}
 									onClick={() => col.sortable && handleSort(String(col.key))}
@@ -82,13 +117,17 @@ export function ServerTable<T extends { id: string }>({
 							</TableRow>
 						) : (
 							data.map((row) => (
-								<TableRow key={row.id}>
+								<TableRow key={getRowId(row)}>
 									{columns.map((col) => (
 										<TableCell
 											key={String(col.key)}
-											className="px-4 py-2 text-center"
+											className="px-4 py-2 text-center justify-center items-center"
 										>
-											{col.render ? col.render(row) : (row[col.key] as string)}
+											<div className="flex justify-center items-center min-h-[36px]">
+												{col.render
+													? col.render(row)
+													: (row[col.key] as string)}
+											</div>
 										</TableCell>
 									))}
 								</TableRow>

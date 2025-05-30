@@ -119,13 +119,14 @@ export default function ClientsPage() {
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<ServerTable
+					<ServerTable<Client>
 						data={pagedClients}
 						columns={columns}
 						totalCount={filteredClients.length}
 						loading={false}
 						query={query}
 						setQuery={setQuery}
+						getRowId={(row) => row.id}
 					/>
 				</CardContent>
 			</Card>

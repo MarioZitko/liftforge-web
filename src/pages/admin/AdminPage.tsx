@@ -10,6 +10,12 @@ const adminSections = [
 		disabled: false,
 	},
 	{
+		label: "Exercises",
+		description: "Manage all exercises in the system.",
+		path: "/admin/exercises",
+		disabled: false,
+	},
+	{
 		label: "Programs",
 		description: "Create and organize training programs.",
 		path: "/admin/programs",

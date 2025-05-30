@@ -21,6 +21,7 @@ export interface CreateUserDto {
 	password: string;
 	name?: string;
 	role: Role;
+	emailVerified?: boolean;
 }
 
 export interface UpdateUserDto {
@@ -28,6 +29,7 @@ export interface UpdateUserDto {
 	name?: string;
 	role?: Role;
 	password?: string;
+	emailVerified?: boolean;
 }
 
 export type FormUserData = {
@@ -35,4 +37,5 @@ export type FormUserData = {
 	name?: string;
 	password?: string;
 	role: Role;
+	emailVerified?: boolean;
 };

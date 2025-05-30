@@ -9,16 +9,13 @@ export function useAuth() {
 	const authApi = authApiClient.getInstance();
 
 	useEffect(() => {
-		if (!user) {
-			authApi
-				.getMe()
-				.then((res) => setUser(res.data))
-				.catch(() => clearUser())
-				.finally(() => setLoading(false));
-		} else {
-			setLoading(false);
-		}
-	}, [user]);
+		// Always try to fetch the real session on load
+		authApi
+			.getMe()
+			.then((res) => setUser(res.data))
+			.catch(() => clearUser()) // if cookie/session is invalid, clear local user
+			.finally(() => setLoading(false));
+	}, []);
 
 	const login = async (data: LoginRequest) => {
 		await authApi.login(data);

@@ -28,10 +28,11 @@ import {
 import { IAdminUsersPageProps } from "./types";
 
 const schema = z.object({
-	email: z.string().email(),
+	email: z.string().email("Invalid email"),
 	name: z.string().optional(),
-	password: z.string().min(6).optional(),
+	password: z.string().optional(),
 	role: z.enum(["CLIENT", "COACH", "ADMIN"]),
+	emailVerified: z.boolean().optional(),
 });
 
 export default function UserFormModal({
@@ -49,16 +50,17 @@ export default function UserFormModal({
 			name: "",
 			password: "",
 			role: "CLIENT",
+			emailVerified: false,
 		},
 	});
 
-	// 🧠 Reset form when editing a new user
 	useEffect(() => {
 		form.reset({
 			email: user?.email ?? "",
 			name: user?.name ?? "",
 			password: "",
 			role: user?.role ?? "CLIENT",
+			emailVerified: user?.emailVerified ?? false,
 		});
 	}, [user, form]);
 
@@ -69,16 +71,22 @@ export default function UserFormModal({
 					email: data.email,
 					name: data.name,
 					role: data.role,
-					password: data.password || undefined,
+					password: data.password?.trim() || undefined,
+					emailVerified: data.emailVerified ?? false,
 				};
 				await usersApi.update(user.id, updateData);
 				showSuccess("User updated");
 			} else {
+				if (!data.password || data.password.trim().length < 6) {
+					showError("Password must be at least 6 characters");
+					return;
+				}
 				const createData: CreateUserDto = {
 					email: data.email,
 					name: data.name,
 					role: data.role,
-					password: data.password!,
+					password: data.password.trim(),
+					emailVerified: data.emailVerified ?? false,
 				};
 				await usersApi.create(createData);
 				showSuccess("User created");
@@ -91,7 +99,7 @@ export default function UserFormModal({
 
 	return (
 		<Dialog open={open} onOpenChange={onClose}>
-			<DialogContent>
+			<DialogContent forceMount>
 				<DialogHeader>
 					<DialogTitle>{user ? "Edit User" : "Create User"}</DialogTitle>
 				</DialogHeader>
@@ -108,7 +116,7 @@ export default function UserFormModal({
 								<FormItem>
 									<FormLabel>Email</FormLabel>
 									<FormControl>
-										<Input {...field} />
+										<Input type="email" {...field} />
 									</FormControl>
 									<FormMessage />
 								</FormItem>
@@ -129,21 +137,31 @@ export default function UserFormModal({
 							)}
 						/>
 
-						{!user && (
-							<FormField
-								name="password"
-								control={form.control}
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Password</FormLabel>
-										<FormControl>
-											<Input type="password" {...field} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						)}
+						<FormField
+							name="password"
+							control={form.control}
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Password</FormLabel>
+									<FormControl>
+										<Input
+											type="password"
+											{...field}
+											value={field.value || ""}
+											placeholder={
+												user ? "Leave empty to keep current" : "Enter password"
+											}
+										/>
+									</FormControl>
+									{user && (
+										<p className="text-xs text-muted-foreground">
+											Leave blank to keep the current password.
+										</p>
+									)}
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
 
 						<FormField
 							name="role"
@@ -161,6 +179,25 @@ export default function UserFormModal({
 											<option value="ADMIN">Admin</option>
 										</select>
 									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							name="emailVerified"
+							control={form.control}
+							render={({ field }) => (
+								<FormItem className="flex items-center gap-2">
+									<FormControl>
+										<input
+											type="checkbox"
+											checked={field.value}
+											onChange={field.onChange}
+											className="mr-2"
+										/>
+									</FormControl>
+									<FormLabel className="m-0">Email Verified</FormLabel>
 									<FormMessage />
 								</FormItem>
 							)}
