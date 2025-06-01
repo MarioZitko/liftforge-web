@@ -124,9 +124,16 @@ export function ServerTable<T>({
 											className="px-4 py-2 text-center justify-center items-center"
 										>
 											<div className="flex justify-center items-center min-h-[36px]">
-												{col.render
-													? col.render(row)
-													: (row[col.key] as string)}
+												{col.render ? (
+													col.render(row)
+												) : (
+													<span
+														className="line-clamp-2 text-sm break-words max-w-[300px]"
+														title={String(row[col.key])}
+													>
+														{String(row[col.key])}
+													</span>
+												)}
 											</div>
 										</TableCell>
 									))}

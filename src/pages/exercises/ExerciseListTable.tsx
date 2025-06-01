@@ -38,7 +38,7 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		null
 	);
 
-	const fetchExercises = async () => {
+	const fetchExercises = async (): Promise<void> => {
 		setLoading(true);
 		try {
 			const data =
@@ -57,7 +57,7 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		fetchExercises();
 	}, [role, filterValue]);
 
-	const handleDelete = async (id: number) => {
+	const handleDelete = async (id: number): Promise<void> => {
 		try {
 			await exercisesApi.delete(id);
 			showSuccess("Exercise deleted");
@@ -67,10 +67,11 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		}
 	};
 
-	const filtered = exercises.filter((e) =>
-		e.name.toLowerCase().includes((query.searchText ?? "").toLowerCase())
+	const filteredExercises = exercises.filter((exercise) =>
+		exercise.name.toLowerCase().includes(query.searchText?.toLowerCase() || "")
 	);
-	const sorted = [...filtered].sort((a, b) => {
+
+	const sortedExercises = [...filteredExercises].sort((a, b) => {
 		const key = query.orderByProperty as keyof Exercise;
 		const valA = a[key] ?? "";
 		const valB = b[key] ?? "";
@@ -78,7 +79,8 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 			? String(valA).localeCompare(String(valB))
 			: String(valB).localeCompare(String(valA));
 	});
-	const paged = sorted.slice(
+
+	const pagedExercises = sortedExercises.slice(
 		(query.pageNumber - 1) * query.pageSize,
 		query.pageNumber * query.pageSize
 	);
@@ -87,15 +89,41 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		{ key: "name", label: "Name", sortable: true },
 		{ key: "description", label: "Description" },
 		{
+			key: "primaryMuscles",
+			label: "Primary Muscles",
+			render: (exercise) =>
+				exercise.primaryMuscles?.length ? (
+					<span className="text-sm">
+						{exercise.primaryMuscles.slice(0, 2).join(", ")}
+						{exercise.primaryMuscles.length > 2 && "..."}
+					</span>
+				) : (
+					<span className="text-muted-foreground italic">-</span>
+				),
+		},
+		{
+			key: "secondaryMuscles",
+			label: "Secondary Muscles",
+			render: (exercise) =>
+				exercise.secondaryMuscles?.length ? (
+					<span className="text-sm">
+						{exercise.secondaryMuscles.slice(0, 2).join(", ")}
+						{exercise.secondaryMuscles.length > 2 && "..."}
+					</span>
+				) : (
+					<span className="text-muted-foreground italic">-</span>
+				),
+		},
+		{
 			key: "tutorialUrl",
 			label: "Tutorial",
-			render: (e) =>
-				e.tutorialUrl ? (
+			render: (exercise) =>
+				exercise.tutorialUrl ? (
 					<a
-						href={e.tutorialUrl}
+						href={exercise.tutorialUrl}
 						target="_blank"
 						rel="noopener noreferrer"
-						className="text-blue-600 underline"
+						className="text-blue-600 underline hover:text-blue-800"
 					>
 						Video
 					</a>
@@ -109,13 +137,13 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		columns.push({
 			key: "id",
 			label: "Actions",
-			render: (e) => (
+			render: (exercise) => (
 				<div className="flex gap-2">
 					<Button
 						variant="outline"
 						size="sm"
 						onClick={() => {
-							setEditExercise(e);
+							setEditExercise(exercise);
 							setShowModal(true);
 						}}
 					>
@@ -124,7 +152,7 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 					<Button
 						variant="destructive"
 						size="sm"
-						onClick={() => setExerciseToDelete(e)}
+						onClick={() => setExerciseToDelete(exercise)}
 					>
 						Delete
 					</Button>
@@ -151,18 +179,22 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 	return (
 		<>
 			<ServerTable<Exercise>
-				data={paged}
+				data={pagedExercises}
 				columns={columns}
-				totalCount={filtered.length}
+				totalCount={filteredExercises.length}
 				loading={loading}
 				query={query}
 				setQuery={setQuery}
-				getRowId={(e) => e.id.toString()}
-				onCreate={() => {
-					setEditExercise(null);
-					setShowModal(true);
-				}}
-				createLabel="Add Exercise"
+				getRowId={(exercise) => exercise.id.toString()}
+				{...(role === "COACH" || role === "ADMIN"
+					? {
+							onCreate: () => {
+								setEditExercise(null);
+								setShowModal(true);
+							},
+							createLabel: "Add Exercise",
+					  }
+					: {})}
 				filters={filters}
 			/>
 

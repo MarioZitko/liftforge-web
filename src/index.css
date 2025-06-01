@@ -118,3 +118,24 @@
 		@apply bg-background text-foreground;
 	}
 }
+
+::-webkit-scrollbar {
+	width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+	background-color: #999;
+	border-radius: 6px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+	background-color: #444;
+}
+
+* {
+	scrollbar-width: thin;
+	scrollbar-color: #999 transparent;
+}
+html.dark * {
+	scrollbar-color: #444 transparent;
+}
