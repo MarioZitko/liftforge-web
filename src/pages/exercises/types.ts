@@ -10,3 +10,10 @@ export interface IExerciseListProps {
 	onSuccess: () => void;
 	exercise: Exercise | null; // if null, creating a new one
 }
+
+export interface IExerciseFormModalProps {
+	open: boolean;
+	onClose: () => void;
+	onSuccess: () => void;
+	exercise: Exercise | null;
+}
