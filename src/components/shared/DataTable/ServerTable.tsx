@@ -14,10 +14,12 @@ import {
 	SelectContent,
 	SelectItem,
 	SelectValue,
+	SelectGroup,
+	SelectLabel,
 } from "@/components/ui/select";
-import { PaginationControls } from "./PaginationControls";
-import { cn } from "@/lib/utils";
-import { ServerTableProps } from "./types";
+import { PaginationControls } from "./PaginationControls"; // Assuming this path is correct
+import { cn } from "@/lib/utils"; // Assuming this path is correct
+import { ServerTableProps, TableFilter } from "./types"; // Using the provided types
 
 export function ServerTable<T>({
 	data,
@@ -57,21 +59,27 @@ export function ServerTable<T>({
 					/>
 
 					{/* Filters */}
-					{filters.slice(0, 4).map((filter, index) => (
+					{/* Filters */}
+					{filters.slice(0, 4).map((filter: TableFilter, index: number) => (
 						<Select
 							key={index}
-							value={filter.value || "All"}
-							onValueChange={(val) => filter.onChange(val === "All" ? "" : val)}
+							value={filter.value}
+							onValueChange={(selectedValue: string) => {
+								filter.onChange(selectedValue);
+							}}
 						>
 							<SelectTrigger className="w-[200px] shrink-0">
 								<SelectValue placeholder={filter.label} />
 							</SelectTrigger>
 							<SelectContent>
-								{filter.options.map((opt) => (
-									<SelectItem key={opt.value} value={opt.value}>
-										{opt.label}
-									</SelectItem>
-								))}
+								<SelectGroup>
+									<SelectLabel>{filter.label}</SelectLabel>
+									{filter.options.map((opt) => (
+										<SelectItem key={opt.value} value={opt.value}>
+											{opt.label}
+										</SelectItem>
+									))}
+								</SelectGroup>
 							</SelectContent>
 						</Select>
 					))}
@@ -109,11 +117,15 @@ export function ServerTable<T>({
 					<TableBody>
 						{loading ? (
 							<TableRow>
-								<TableCell colSpan={columns.length}>Loading...</TableCell>
+								<TableCell colSpan={columns.length} className="text-center">
+									Loading...
+								</TableCell>
 							</TableRow>
 						) : data.length === 0 ? (
 							<TableRow>
-								<TableCell colSpan={columns.length}>No results.</TableCell>
+								<TableCell colSpan={columns.length} className="text-center">
+									No results.
+								</TableCell>
 							</TableRow>
 						) : (
 							data.map((row) => (
@@ -121,7 +133,7 @@ export function ServerTable<T>({
 									{columns.map((col) => (
 										<TableCell
 											key={String(col.key)}
-											className="px-4 py-2 text-center justify-center items-center"
+											className="px-4 py-2 text-center" // Removed justify-center items-center, let content flow
 										>
 											<div className="flex justify-center items-center min-h-[36px]">
 												{col.render ? (
@@ -129,9 +141,9 @@ export function ServerTable<T>({
 												) : (
 													<span
 														className="line-clamp-2 text-sm break-words max-w-[300px]"
-														title={String(row[col.key])}
+														title={String(row[col.key as keyof T] ?? "")}
 													>
-														{String(row[col.key])}
+														{String(row[col.key as keyof T] ?? "")}
 													</span>
 												)}
 											</div>

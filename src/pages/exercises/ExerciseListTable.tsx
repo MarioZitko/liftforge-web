@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
-import { Column, ServerQuery } from "@/components/shared/DataTable/types";
+import {
+	Column,
+	ServerQuery,
+	TableFilterOption,
+} from "@/components/shared/DataTable/types"; // Make sure TableFilterOption is imported
 import { ServerTable } from "@/components/shared/DataTable/ServerTable";
 import { Button } from "@/components/ui/button";
 import { showError, showSuccess } from "@/components/shared/utils/toast.util";
 import ExercisesApiClient from "@/api/exercises/exercises.api";
 import { Exercise } from "@/api/exercises/exercises.types";
+import { EXERCISE_MUSCLE_GROUP } from "@/api/exercises/exercises.enums";
 import ExerciseFormModal from "./ExerciseFormModal";
 import {
 	AlertDialog,
@@ -18,6 +23,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { IExerciseListTableProps } from "./types";
 
+const ALL_MUSCLES_FILTER_VALUE = "--ALL_MUSCLES--"; // Unique value for "All Muscles" option
+
 export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 	const exercisesApi = ExercisesApiClient.getInstance();
 
@@ -29,7 +36,11 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		ascending: true,
 	});
 
-	const [filterValue, setFilterValue] = useState("all");
+	const [coachExerciseFilter, setCoachExerciseFilter] = useState("all"); // For "My Exercises" vs "Shared + My"
+	const [primaryMuscleFilter, setPrimaryMuscleFilter] = useState<string>(""); // Empty string means no filter
+	const [secondaryMuscleFilter, setSecondaryMuscleFilter] =
+		useState<string>(""); // Empty string means no filter
+
 	const [exercises, setExercises] = useState<Exercise[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [editExercise, setEditExercise] = useState<Exercise | null>(null);
@@ -43,7 +54,7 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		try {
 			const data =
 				role === "COACH"
-					? await exercisesApi.getCoachExercises(filterValue === "mine")
+					? await exercisesApi.getCoachExercises(coachExerciseFilter === "mine")
 					: await exercisesApi.getAll();
 			setExercises(data);
 		} catch {
@@ -55,7 +66,7 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 
 	useEffect(() => {
 		fetchExercises();
-	}, [role, filterValue]);
+	}, [role, coachExerciseFilter]); // coachExerciseFilter triggers refetch
 
 	const handleDelete = async (id: number): Promise<void> => {
 		try {
@@ -67,9 +78,22 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		}
 	};
 
-	const filteredExercises = exercises.filter((exercise) =>
-		exercise.name.toLowerCase().includes(query.searchText?.toLowerCase() || "")
-	);
+	const filteredExercises = exercises
+		.filter((exercise) =>
+			exercise.name
+				.toLowerCase()
+				.includes(query.searchText?.toLowerCase() || "")
+		)
+		.filter((exercise) =>
+			primaryMuscleFilter
+				? exercise.primaryMuscles?.includes(primaryMuscleFilter)
+				: true
+		)
+		.filter((exercise) =>
+			secondaryMuscleFilter
+				? exercise.secondaryMuscles?.includes(secondaryMuscleFilter)
+				: true
+		);
 
 	const sortedExercises = [...filteredExercises].sort((a, b) => {
 		const key = query.orderByProperty as keyof Exercise;
@@ -86,6 +110,7 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 	);
 
 	const columns: Column<Exercise>[] = [
+		// ... your columns definition remains the same
 		{ key: "name", label: "Name", sortable: true },
 		{ key: "description", label: "Description" },
 		{
@@ -135,7 +160,7 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 
 	if (role === "COACH") {
 		columns.push({
-			key: "id",
+			key: "id", // Assuming 'id' is a valid key for actions, or use a unique string
 			label: "Actions",
 			render: (exercise) => (
 				<div className="flex gap-2">
@@ -161,20 +186,62 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		});
 	}
 
-	const filters =
-		role === "COACH"
-			? [
-					{
-						label: "Exercises",
-						value: filterValue,
-						onChange: (val: string) => setFilterValue(val),
-						options: [
-							{ label: "My Exercises", value: "mine" },
-							{ label: "Shared + My Exercises", value: "all" },
-						],
-					},
-			  ]
-			: [];
+	const muscleGroupOptions: TableFilterOption[] = [
+		{ label: "All Muscles", value: ALL_MUSCLES_FILTER_VALUE }, // Explicit "All" option
+		...Object.values(EXERCISE_MUSCLE_GROUP).map((muscle) => ({
+			label:
+				muscle.charAt(0) + muscle.slice(1).toLowerCase().replace(/_/g, " "),
+			value: muscle, // Actual muscle values must not be "" or ALL_MUSCLES_FILTER_VALUE
+		})),
+	];
+
+	const tableFilters = [];
+
+	if (role === "COACH") {
+		tableFilters.push({
+			label: "Filter Exercises", // Placeholder for the Select
+			value: coachExerciseFilter, // "all" or "mine"
+			onChange: (selectedValue: string) => {
+				setCoachExerciseFilter(selectedValue);
+				setQuery({ ...query, pageNumber: 1 });
+			},
+			options: [
+				{ label: "Shared + My Exercises", value: "all" },
+				{ label: "My Exercises", value: "mine" },
+			],
+		});
+	}
+
+	tableFilters.push(
+		{
+			label: "Primary Muscle", // This will be the placeholder
+			value:
+				primaryMuscleFilter === ""
+					? ALL_MUSCLES_FILTER_VALUE
+					: primaryMuscleFilter, // Select needs a non-empty value for the "All" option to be selected
+			onChange: (selectedValue: string) => {
+				setPrimaryMuscleFilter(
+					selectedValue === ALL_MUSCLES_FILTER_VALUE ? "" : selectedValue
+				);
+				setQuery({ ...query, pageNumber: 1 });
+			},
+			options: muscleGroupOptions,
+		},
+		{
+			label: "Secondary Muscle", // This will be the placeholder
+			value:
+				secondaryMuscleFilter === ""
+					? ALL_MUSCLES_FILTER_VALUE
+					: secondaryMuscleFilter, // Select needs a non-empty value for the "All" option to be selected
+			onChange: (selectedValue: string) => {
+				setSecondaryMuscleFilter(
+					selectedValue === ALL_MUSCLES_FILTER_VALUE ? "" : selectedValue
+				);
+				setQuery({ ...query, pageNumber: 1 });
+			},
+			options: muscleGroupOptions,
+		}
+	);
 
 	return (
 		<>
@@ -195,7 +262,7 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 							createLabel: "Add Exercise",
 					  }
 					: {})}
-				filters={filters}
+				filters={tableFilters}
 			/>
 
 			{role === "COACH" && (
@@ -230,7 +297,9 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 							</AlertDialogCancel>
 							<AlertDialogAction
 								onClick={async () => {
-									await handleDelete(exerciseToDelete.id);
+									if (exerciseToDelete) {
+										await handleDelete(exerciseToDelete.id);
+									}
 									setExerciseToDelete(null);
 								}}
 							>
