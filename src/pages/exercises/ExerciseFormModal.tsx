@@ -11,20 +11,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	Exercise,
-	CreateExerciseDto,
-	UpdateExerciseDto,
-} from "@/api/exercises/exercises.types";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { EXERCISE_MUSCLE_GROUP } from "@/api/exercises/exercises.enums";
 import ExercisesApiClient from "@/api/exercises/exercises.api";
 import { showError, showSuccess } from "@/components/shared/utils/toast.util";
-
-interface Props {
-	open: boolean;
-	onClose: () => void;
-	onSuccess: () => void;
-	exercise: Exercise | null; // if null, creating a new one
-}
+import { IExerciseFormModalProps } from "./types";
+import MultiSelectField from "@/components/shared/Form/MultiSelectField";
 
 const schema = z.object({
 	name: z.string().min(2, "Name is required"),
@@ -34,6 +27,8 @@ const schema = z.object({
 		.url("Must be a valid URL")
 		.optional()
 		.or(z.literal("")),
+	primaryMuscles: z.array(z.string()),
+	secondaryMuscles: z.array(z.string()),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -43,13 +38,15 @@ export default function ExerciseFormModal({
 	onClose,
 	onSuccess,
 	exercise,
-}: Props) {
+}: IExerciseFormModalProps) {
 	const exercisesApi = ExercisesApiClient.getInstance();
 
 	const {
 		register,
 		handleSubmit,
 		reset,
+		watch,
+		setValue,
 		formState: { errors, isSubmitting },
 	} = useForm<FormData>({
 		resolver: zodResolver(schema),
@@ -57,84 +54,164 @@ export default function ExerciseFormModal({
 			name: "",
 			description: "",
 			tutorialUrl: "",
+			primaryMuscles: [],
+			secondaryMuscles: [],
 		},
 	});
 
-	const onSubmit = async (data: FormData) => {
+	const watchedPrimaryMuscles = watch("primaryMuscles");
+	const watchedSecondaryMuscles = watch("secondaryMuscles");
+
+	useEffect(() => {
+		if (open) {
+			if (exercise) {
+				reset({
+					name: exercise.name,
+					description: exercise.description ?? "",
+					tutorialUrl: exercise.tutorialUrl ?? "",
+					primaryMuscles: exercise.primaryMuscles ?? [],
+					secondaryMuscles: exercise.secondaryMuscles ?? [],
+				});
+			} else {
+				reset();
+			}
+		}
+	}, [exercise, open, reset]);
+
+	const handleArrayValueAdd = (
+		fieldName: "primaryMuscles" | "secondaryMuscles",
+		value: string
+	): void => {
+		const currentArray = watch(fieldName);
+		if (value && !currentArray.includes(value)) {
+			setValue(fieldName, [...currentArray, value], { shouldDirty: true });
+		}
+	};
+
+	const handleArrayValueRemove = (
+		fieldName: "primaryMuscles" | "secondaryMuscles",
+		value: string
+	): void => {
+		const currentArray = watch(fieldName);
+		setValue(
+			fieldName,
+			currentArray.filter((item) => item !== value),
+			{ shouldDirty: true }
+		);
+	};
+
+	const onSubmit = async (data: FormData): Promise<void> => {
 		try {
 			if (exercise) {
-				const updateDto: UpdateExerciseDto = data;
-				await exercisesApi.update(exercise.id, updateDto);
+				await exercisesApi.update(exercise.id, data);
 				showSuccess("Exercise updated");
 			} else {
-				const createDto: CreateExerciseDto = data;
-				await exercisesApi.create(createDto);
+				await exercisesApi.create(data);
 				showSuccess("Exercise created");
 			}
 			onSuccess();
-			reset();
+			onClose();
 		} catch {
 			showError("Failed to save exercise");
 		}
 	};
 
-	// Load existing values if editing
-	useEffect(() => {
-		if (exercise) {
-			reset({
-				name: exercise.name,
-				description: exercise.description ?? "",
-				tutorialUrl: exercise.tutorialUrl ?? "",
-			});
-		} else {
-			reset();
-		}
-	}, [exercise, reset]);
-
 	return (
 		<Dialog open={open} onOpenChange={onClose}>
-			<DialogContent>
+			<DialogContent className="max-h-[90vh] overflow-y-auto max-w-3xl">
 				<DialogHeader>
-					<DialogTitle>
-						{exercise ? "Edit Exercise" : "Create Exercise"}
+					<DialogTitle className="text-xl">
+						{exercise ? "Edit Exercise" : "Create New Exercise"}
 					</DialogTitle>
 				</DialogHeader>
 
-				<form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-					<div>
-						<Input placeholder="Exercise name" {...register("name")} />
-						{errors.name && (
-							<p className="text-sm text-red-500">{errors.name.message}</p>
-						)}
+				<form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+					{/* Essential Info */}
+					<div className="space-y-4">
+						<h3 className="text-lg font-semibold text-foreground border-b pb-2">
+							Basic Information
+						</h3>
+
+						<div>
+							<Label>Exercise Name *</Label>
+							<Input placeholder="e.g., Barbell Row" {...register("name")} />
+							{errors.name && (
+								<p className="text-sm text-red-500 mt-1">
+									{errors.name.message}
+								</p>
+							)}
+						</div>
+
+						<div>
+							<Label>Description</Label>
+							<Textarea
+								placeholder="Short description..."
+								{...register("description")}
+							/>
+						</div>
+
+						<div>
+							<Label>Tutorial URL</Label>
+							<Input
+								placeholder="https://youtube.com/watch?v=..."
+								{...register("tutorialUrl")}
+							/>
+							{errors.tutorialUrl && (
+								<p className="text-sm text-red-500 mt-1">
+									{errors.tutorialUrl.message}
+								</p>
+							)}
+						</div>
 					</div>
 
-					<div>
-						<Textarea
-							placeholder="Description (optional)"
-							{...register("description")}
+					<Separator className="my-6" />
+
+					{/* Muscles */}
+					<div className="space-y-4">
+						<h3 className="text-lg font-semibold text-foreground border-b pb-2">
+							Muscle Involvement
+						</h3>
+
+						<MultiSelectField
+							label="Primary Muscles"
+							options={Object.values(EXERCISE_MUSCLE_GROUP)}
+							selectedValues={watchedPrimaryMuscles}
+							onValueAdd={(value) =>
+								handleArrayValueAdd("primaryMuscles", value)
+							}
+							onValueRemove={(value) =>
+								handleArrayValueRemove("primaryMuscles", value)
+							}
+							description="Main muscles engaged"
 						/>
-						{errors.description && (
-							<p className="text-sm text-red-500">
-								{errors.description.message}
-							</p>
-						)}
-					</div>
 
-					<div>
-						<Input
-							placeholder="Tutorial URL (optional)"
-							{...register("tutorialUrl")}
+						<MultiSelectField
+							label="Secondary Muscles"
+							options={Object.values(EXERCISE_MUSCLE_GROUP)}
+							selectedValues={watchedSecondaryMuscles}
+							onValueAdd={(value) =>
+								handleArrayValueAdd("secondaryMuscles", value)
+							}
+							onValueRemove={(value) =>
+								handleArrayValueRemove("secondaryMuscles", value)
+							}
+							description="Supporting or assisting muscles"
 						/>
-						{errors.tutorialUrl && (
-							<p className="text-sm text-red-500">
-								{errors.tutorialUrl.message}
-							</p>
-						)}
 					</div>
 
-					<div className="flex justify-end">
+					<Separator className="my-6" />
+
+					{/* Submit */}
+					<div className="flex justify-end space-x-3 pt-4">
+						<Button type="button" variant="outline" onClick={onClose}>
+							Cancel
+						</Button>
 						<Button type="submit" disabled={isSubmitting}>
-							{exercise ? "Update" : "Create"}
+							{isSubmitting
+								? "Saving..."
+								: exercise
+								? "Update Exercise"
+								: "Create Exercise"}
 						</Button>
 					</div>
 				</form>

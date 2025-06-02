@@ -75,7 +75,10 @@ export default function AdminUsersPage() {
 		.filter((u) =>
 			u.email.toLowerCase().includes((query.searchText ?? "").toLowerCase())
 		)
-		.filter((u) => (roleFilter ? u.role === roleFilter : true))
+		.filter((u) =>
+			roleFilter && roleFilter !== "All" ? u.role === roleFilter : true
+		)
+
 		.filter((u) =>
 			verifiedFilter === "verified"
 				? u.emailVerified

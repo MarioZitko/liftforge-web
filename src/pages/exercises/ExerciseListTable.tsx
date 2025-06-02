@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
-import { Column, ServerQuery } from "@/components/shared/DataTable/types";
+import {
+	Column,
+	ServerQuery,
+	TableFilterOption,
+} from "@/components/shared/DataTable/types"; // Make sure TableFilterOption is imported
 import { ServerTable } from "@/components/shared/DataTable/ServerTable";
 import { Button } from "@/components/ui/button";
 import { showError, showSuccess } from "@/components/shared/utils/toast.util";
 import ExercisesApiClient from "@/api/exercises/exercises.api";
 import { Exercise } from "@/api/exercises/exercises.types";
+import { EXERCISE_MUSCLE_GROUP } from "@/api/exercises/exercises.enums";
 import ExerciseFormModal from "./ExerciseFormModal";
 import {
 	AlertDialog,
@@ -18,6 +23,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { IExerciseListTableProps } from "./types";
 
+const ALL_MUSCLES_FILTER_VALUE = "--ALL_MUSCLES--"; // Unique value for "All Muscles" option
+
 export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 	const exercisesApi = ExercisesApiClient.getInstance();
 
@@ -29,7 +36,11 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		ascending: true,
 	});
 
-	const [filterValue, setFilterValue] = useState("all");
+	const [coachExerciseFilter, setCoachExerciseFilter] = useState("all"); // For "My Exercises" vs "Shared + My"
+	const [primaryMuscleFilter, setPrimaryMuscleFilter] = useState<string>(""); // Empty string means no filter
+	const [secondaryMuscleFilter, setSecondaryMuscleFilter] =
+		useState<string>(""); // Empty string means no filter
+
 	const [exercises, setExercises] = useState<Exercise[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [editExercise, setEditExercise] = useState<Exercise | null>(null);
@@ -38,12 +49,12 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		null
 	);
 
-	const fetchExercises = async () => {
+	const fetchExercises = async (): Promise<void> => {
 		setLoading(true);
 		try {
 			const data =
 				role === "COACH"
-					? await exercisesApi.getCoachExercises(filterValue === "mine")
+					? await exercisesApi.getCoachExercises(coachExerciseFilter === "mine")
 					: await exercisesApi.getAll();
 			setExercises(data);
 		} catch {
@@ -55,9 +66,9 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 
 	useEffect(() => {
 		fetchExercises();
-	}, [role, filterValue]);
+	}, [role, coachExerciseFilter]); // coachExerciseFilter triggers refetch
 
-	const handleDelete = async (id: number) => {
+	const handleDelete = async (id: number): Promise<void> => {
 		try {
 			await exercisesApi.delete(id);
 			showSuccess("Exercise deleted");
@@ -67,10 +78,24 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		}
 	};
 
-	const filtered = exercises.filter((e) =>
-		e.name.toLowerCase().includes((query.searchText ?? "").toLowerCase())
-	);
-	const sorted = [...filtered].sort((a, b) => {
+	const filteredExercises = exercises
+		.filter((exercise) =>
+			exercise.name
+				.toLowerCase()
+				.includes(query.searchText?.toLowerCase() || "")
+		)
+		.filter((exercise) =>
+			primaryMuscleFilter
+				? exercise.primaryMuscles?.includes(primaryMuscleFilter)
+				: true
+		)
+		.filter((exercise) =>
+			secondaryMuscleFilter
+				? exercise.secondaryMuscles?.includes(secondaryMuscleFilter)
+				: true
+		);
+
+	const sortedExercises = [...filteredExercises].sort((a, b) => {
 		const key = query.orderByProperty as keyof Exercise;
 		const valA = a[key] ?? "";
 		const valB = b[key] ?? "";
@@ -78,24 +103,52 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 			? String(valA).localeCompare(String(valB))
 			: String(valB).localeCompare(String(valA));
 	});
-	const paged = sorted.slice(
+
+	const pagedExercises = sortedExercises.slice(
 		(query.pageNumber - 1) * query.pageSize,
 		query.pageNumber * query.pageSize
 	);
 
 	const columns: Column<Exercise>[] = [
+		// ... your columns definition remains the same
 		{ key: "name", label: "Name", sortable: true },
 		{ key: "description", label: "Description" },
 		{
+			key: "primaryMuscles",
+			label: "Primary Muscles",
+			render: (exercise) =>
+				exercise.primaryMuscles?.length ? (
+					<span className="text-sm">
+						{exercise.primaryMuscles.slice(0, 2).join(", ")}
+						{exercise.primaryMuscles.length > 2 && "..."}
+					</span>
+				) : (
+					<span className="text-muted-foreground italic">-</span>
+				),
+		},
+		{
+			key: "secondaryMuscles",
+			label: "Secondary Muscles",
+			render: (exercise) =>
+				exercise.secondaryMuscles?.length ? (
+					<span className="text-sm">
+						{exercise.secondaryMuscles.slice(0, 2).join(", ")}
+						{exercise.secondaryMuscles.length > 2 && "..."}
+					</span>
+				) : (
+					<span className="text-muted-foreground italic">-</span>
+				),
+		},
+		{
 			key: "tutorialUrl",
 			label: "Tutorial",
-			render: (e) =>
-				e.tutorialUrl ? (
+			render: (exercise) =>
+				exercise.tutorialUrl ? (
 					<a
-						href={e.tutorialUrl}
+						href={exercise.tutorialUrl}
 						target="_blank"
 						rel="noopener noreferrer"
-						className="text-blue-600 underline"
+						className="text-blue-600 underline hover:text-blue-800"
 					>
 						Video
 					</a>
@@ -107,15 +160,15 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 
 	if (role === "COACH") {
 		columns.push({
-			key: "id",
+			key: "id", // Assuming 'id' is a valid key for actions, or use a unique string
 			label: "Actions",
-			render: (e) => (
+			render: (exercise) => (
 				<div className="flex gap-2">
 					<Button
 						variant="outline"
 						size="sm"
 						onClick={() => {
-							setEditExercise(e);
+							setEditExercise(exercise);
 							setShowModal(true);
 						}}
 					>
@@ -124,7 +177,7 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 					<Button
 						variant="destructive"
 						size="sm"
-						onClick={() => setExerciseToDelete(e)}
+						onClick={() => setExerciseToDelete(exercise)}
 					>
 						Delete
 					</Button>
@@ -133,37 +186,83 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 		});
 	}
 
-	const filters =
-		role === "COACH"
-			? [
-					{
-						label: "Exercises",
-						value: filterValue,
-						onChange: (val: string) => setFilterValue(val),
-						options: [
-							{ label: "My Exercises", value: "mine" },
-							{ label: "Shared + My Exercises", value: "all" },
-						],
-					},
-			  ]
-			: [];
+	const muscleGroupOptions: TableFilterOption[] = [
+		{ label: "All Muscles", value: ALL_MUSCLES_FILTER_VALUE }, // Explicit "All" option
+		...Object.values(EXERCISE_MUSCLE_GROUP).map((muscle) => ({
+			label:
+				muscle.charAt(0) + muscle.slice(1).toLowerCase().replace(/_/g, " "),
+			value: muscle, // Actual muscle values must not be "" or ALL_MUSCLES_FILTER_VALUE
+		})),
+	];
+
+	const tableFilters = [];
+
+	if (role === "COACH") {
+		tableFilters.push({
+			label: "Filter Exercises", // Placeholder for the Select
+			value: coachExerciseFilter, // "all" or "mine"
+			onChange: (selectedValue: string) => {
+				setCoachExerciseFilter(selectedValue);
+				setQuery({ ...query, pageNumber: 1 });
+			},
+			options: [
+				{ label: "Shared + My Exercises", value: "all" },
+				{ label: "My Exercises", value: "mine" },
+			],
+		});
+	}
+
+	tableFilters.push(
+		{
+			label: "Primary Muscle", // This will be the placeholder
+			value:
+				primaryMuscleFilter === ""
+					? ALL_MUSCLES_FILTER_VALUE
+					: primaryMuscleFilter, // Select needs a non-empty value for the "All" option to be selected
+			onChange: (selectedValue: string) => {
+				setPrimaryMuscleFilter(
+					selectedValue === ALL_MUSCLES_FILTER_VALUE ? "" : selectedValue
+				);
+				setQuery({ ...query, pageNumber: 1 });
+			},
+			options: muscleGroupOptions,
+		},
+		{
+			label: "Secondary Muscle", // This will be the placeholder
+			value:
+				secondaryMuscleFilter === ""
+					? ALL_MUSCLES_FILTER_VALUE
+					: secondaryMuscleFilter, // Select needs a non-empty value for the "All" option to be selected
+			onChange: (selectedValue: string) => {
+				setSecondaryMuscleFilter(
+					selectedValue === ALL_MUSCLES_FILTER_VALUE ? "" : selectedValue
+				);
+				setQuery({ ...query, pageNumber: 1 });
+			},
+			options: muscleGroupOptions,
+		}
+	);
 
 	return (
 		<>
 			<ServerTable<Exercise>
-				data={paged}
+				data={pagedExercises}
 				columns={columns}
-				totalCount={filtered.length}
+				totalCount={filteredExercises.length}
 				loading={loading}
 				query={query}
 				setQuery={setQuery}
-				getRowId={(e) => e.id.toString()}
-				onCreate={() => {
-					setEditExercise(null);
-					setShowModal(true);
-				}}
-				createLabel="Add Exercise"
-				filters={filters}
+				getRowId={(exercise) => exercise.id.toString()}
+				{...(role === "COACH" || role === "ADMIN"
+					? {
+							onCreate: () => {
+								setEditExercise(null);
+								setShowModal(true);
+							},
+							createLabel: "Add Exercise",
+					  }
+					: {})}
+				filters={tableFilters}
 			/>
 
 			{role === "COACH" && (
@@ -198,7 +297,9 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 							</AlertDialogCancel>
 							<AlertDialogAction
 								onClick={async () => {
-									await handleDelete(exerciseToDelete.id);
+									if (exerciseToDelete) {
+										await handleDelete(exerciseToDelete.id);
+									}
 									setExerciseToDelete(null);
 								}}
 							>
