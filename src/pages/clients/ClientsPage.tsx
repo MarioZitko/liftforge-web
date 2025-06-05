@@ -10,6 +10,22 @@ import { Button } from "@/components/ui/button";
 import { ServerTable } from "@/components/shared/DataTable/ServerTable";
 import { useState } from "react";
 import { Column, ServerQuery } from "@/components/shared/DataTable/types";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+	DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import CoachesApiClient from "@/api/coach/coach.api";
+import { showSuccess, showError } from "@/components/shared/utils/toast.util";
 
 interface Client {
 	id: string;
@@ -47,6 +63,12 @@ const mockClients: Client[] = [
 	},
 ];
 
+const inviteClientSchema = z.object({
+	email: z.string().email("Invalid email address"),
+});
+
+type InviteClientFormValues = z.infer<typeof inviteClientSchema>;
+
 export default function ClientsPage() {
 	const [query, setQuery] = useState<ServerQuery>({
 		pageNumber: 1,
@@ -55,6 +77,23 @@ export default function ClientsPage() {
 		orderByProperty: "name",
 		ascending: true,
 	});
+
+	const form = useForm<InviteClientFormValues>({
+		resolver: zodResolver(inviteClientSchema),
+		defaultValues: {
+			email: "",
+		},
+	});
+
+	async function handleInviteClient(values: InviteClientFormValues) {
+		try {
+			await CoachesApiClient.getInstance().inviteClient(values);
+			showSuccess(`An invitation has been sent to ${values.email}.`);
+			form.reset();
+		} catch (error) {
+			showError(error, "Failed to send invitation.");
+		}
+	}
 
 	const filteredClients = mockClients.filter((client) =>
 		client.name.toLowerCase().includes(query.searchText?.toLowerCase() ?? "")
@@ -112,11 +151,54 @@ export default function ClientsPage() {
 			<h1 className="text-2xl font-bold">Clients</h1>
 
 			<Card>
-				<CardHeader>
-					<CardTitle>All Clients</CardTitle>
-					<CardDescription>
-						View client activity, program status, and email verification.
-					</CardDescription>
+				<CardHeader className="flex flex-col items-center">
+					<div className="text-center">
+						<CardTitle>All Clients</CardTitle>
+						<CardDescription>
+							View client activity, program status, and email verification.
+						</CardDescription>
+					</div>
+					<Dialog>
+						<DialogTrigger asChild>
+							<Button className="mt-4">Invite Client</Button>
+						</DialogTrigger>
+						<DialogContent className="sm:max-w-[425px]">
+							<DialogHeader>
+								<DialogTitle>Invite New Client</DialogTitle>
+								<DialogDescription>
+									Enter the email address of the client you want to invite.
+								</DialogDescription>
+							</DialogHeader>
+							<form
+								onSubmit={form.handleSubmit(handleInviteClient)}
+								className="grid gap-4 py-4"
+							>
+								<div className="grid grid-cols-4 items-center gap-4">
+									<Label htmlFor="email" className="text-right">
+										Email
+									</Label>
+									<Input
+										id="email"
+										placeholder="client@example.com"
+										className="col-span-3"
+										{...form.register("email")}
+									/>
+									{form.formState.errors.email && (
+										<p className="col-span-4 text-right text-sm text-red-500">
+											{form.formState.errors.email.message}
+										</p>
+									)}
+								</div>
+								<DialogFooter>
+									<Button type="submit" disabled={form.formState.isSubmitting}>
+										{form.formState.isSubmitting
+											? "Inviting..."
+											: "Send Invitation"}
+									</Button>
+								</DialogFooter>
+							</form>
+						</DialogContent>
+					</Dialog>
 				</CardHeader>
 				<CardContent>
 					<ServerTable<Client>
