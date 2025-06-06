@@ -1,7 +1,8 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 // API
 import AuthApiClient from "@/api/auth/auth.api";
@@ -29,23 +30,37 @@ const registerSchema = z.object({
 	email: z.string().email(),
 	password: z.string().min(6),
 	role: z.enum(["COACH", "CLIENT"]),
+	inviteToken: z.string().optional(),
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
+	const inviteToken = searchParams.get("inviteToken") || undefined;
+	const emailFromQuery = searchParams.get("email") || "";
+
 	const form = useForm<RegisterFormData>({
 		resolver: zodResolver(registerSchema),
 		defaultValues: {
 			name: "",
 			firstName: "",
 			lastName: "",
-			email: "",
+			email: emailFromQuery,
 			password: "",
 			role: "CLIENT",
+			inviteToken,
 		},
 	});
+
+	useEffect(() => {
+		if (inviteToken) {
+			form.setValue("email", emailFromQuery);
+			form.setValue("role", "CLIENT");
+			form.setValue("inviteToken", inviteToken);
+		}
+	}, [inviteToken, emailFromQuery, form]);
 
 	const onSubmit = async (data: RegisterFormData) => {
 		try {
@@ -118,6 +133,7 @@ export default function RegisterPage() {
 											type="email"
 											placeholder="you@example.com"
 											{...field}
+											disabled={!!inviteToken}
 										/>
 									</FormControl>
 									<FormMessage />
@@ -155,6 +171,7 @@ export default function RegisterPage() {
 												onCheckedChange={(checked) =>
 													field.onChange(checked ? "CLIENT" : "COACH")
 												}
+												disabled={!!inviteToken}
 											/>
 											<FormLabel className="text-sm font-medium">
 												Client

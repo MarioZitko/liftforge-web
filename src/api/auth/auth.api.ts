@@ -45,9 +45,10 @@ export default class AuthApiClient extends BaseApi {
 	public async register(
 		data: RegisterRequest
 	): Promise<ApiSuccessResponse<GenericMessageResponse>> {
+		const { inviteToken, ...rest } = data;
 		const res = await this.axiosInstance.post<
 			ApiSuccessResponse<GenericMessageResponse>
-		>("/register", data);
+		>(`/register${inviteToken ? `?inviteToken=${inviteToken}` : ""}`, rest);
 		return res.data;
 	}
 

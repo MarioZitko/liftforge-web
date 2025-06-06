@@ -14,6 +14,7 @@ export interface RegisterRequest {
 	firstName: string;
 	lastName: string;
 	role?: string;
+	inviteToken?: string;
 }
 
 export interface RefreshTokenRequest {
