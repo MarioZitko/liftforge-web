@@ -3,6 +3,11 @@ export interface Client {
 	userId: string;
 	dateOfBirth?: Date;
 	coachId?: string;
+	user?: {
+		name: string;
+		email: string;
+		emailVerified: boolean;
+	};
 }
 
 export interface ClientProgram {
