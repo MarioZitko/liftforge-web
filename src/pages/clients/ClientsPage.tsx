@@ -47,6 +47,7 @@ interface ClientTableData {
 	activeProgram: string | null;
 	lastActivity: string;
 	isVerified: boolean;
+	lookingForCoach: boolean;
 }
 
 const inviteClientSchema = z.object({
@@ -67,6 +68,8 @@ export default function ClientsPage() {
 	const [loading, setLoading] = useState<boolean>(true);
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 	const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+	const [showInviteClientDialog, setShowInviteClientDialog] = useState(false);
+	const [showViewClientDialog, setShowViewClientDialog] = useState(false);
 
 	useEffect(() => {
 		fetchClients();
@@ -86,6 +89,7 @@ export default function ClientsPage() {
 					activeProgram: null, // Placeholder: Need active program from API
 					lastActivity: "", // Placeholder: Need last activity from API
 					isVerified: client.user?.emailVerified || false,
+					lookingForCoach: client.lookingForCoach ?? true,
 				})
 			);
 			setClients(transformedClients);
@@ -108,6 +112,7 @@ export default function ClientsPage() {
 			await CoachesApiClient.getInstance().inviteClient(values);
 			showSuccess(`An invitation has been sent to ${values.email}.`);
 			form.reset();
+			setShowInviteClientDialog(false); // Close the dialog on successful invitation
 			await fetchClients(); // Refresh client list after inviting a new client
 		} catch (error) {
 			showError(error, "Failed to send invitation.");
@@ -152,6 +157,15 @@ export default function ClientsPage() {
 		{ key: "name", label: "Name", sortable: true },
 		{ key: "email", label: "Email", sortable: true },
 		{
+			key: "lookingForCoach",
+			label: "Status",
+			render: (row) => (
+				<Badge variant={row.lookingForCoach ? "secondary" : "default"}>
+					{row.lookingForCoach ? "Looking for Coach" : "Assigned"}
+				</Badge>
+			),
+		},
+		{
 			key: "activeProgram",
 			label: "Program",
 			render: (row) =>
@@ -174,9 +188,16 @@ export default function ClientsPage() {
 			label: "Actions",
 			render: (row) => (
 				<div className="flex space-x-2">
-					<Dialog>
+					<Dialog
+						open={showViewClientDialog}
+						onOpenChange={setShowViewClientDialog}
+					>
 						<DialogTrigger asChild>
-							<Button size="sm" variant="outline">
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() => setShowViewClientDialog(true)}
+							>
 								View
 							</Button>
 						</DialogTrigger>
@@ -200,25 +221,47 @@ export default function ClientsPage() {
 								</p>
 							</div>
 							<DialogFooter>
-								<Button type="button">Close</Button>
+								<Button
+									type="button"
+									onClick={() => setShowViewClientDialog(false)}
+								>
+									Close
+								</Button>
 							</DialogFooter>
 						</DialogContent>
 					</Dialog>
-					<Button size="sm" variant="outline">
-						Edit
-					</Button>
-					<AlertDialogTrigger asChild>
-						<Button
-							size="sm"
-							variant="destructive"
-							onClick={() => {
-								setClientToDelete(row.id);
-								setShowDeleteConfirm(true);
-							}}
-						>
-							Delete
-						</Button>
-					</AlertDialogTrigger>
+					<AlertDialog
+						open={showDeleteConfirm}
+						onOpenChange={setShowDeleteConfirm}
+					>
+						<AlertDialogTrigger asChild>
+							<Button
+								size="sm"
+								variant="destructive"
+								onClick={() => {
+									setClientToDelete(row.id);
+									setShowDeleteConfirm(true);
+								}}
+							>
+								Delete
+							</Button>
+						</AlertDialogTrigger>
+						<AlertDialogContent>
+							<AlertDialogHeader>
+								<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+								<AlertDialogDescription>
+									This action cannot be undone. This will permanently delete the
+									client and remove their data from our servers.
+								</AlertDialogDescription>
+							</AlertDialogHeader>
+							<AlertDialogFooter>
+								<AlertDialogCancel>Cancel</AlertDialogCancel>
+								<AlertDialogAction onClick={confirmDeleteClient}>
+									Continue
+								</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
 				</div>
 			),
 		},
@@ -236,7 +279,10 @@ export default function ClientsPage() {
 							View client activity, program status, and email verification.
 						</CardDescription>
 					</div>
-					<Dialog>
+					<Dialog
+						open={showInviteClientDialog}
+						onOpenChange={setShowInviteClientDialog}
+					>
 						<DialogTrigger asChild>
 							<Button className="mt-4">Invite Client</Button>
 						</DialogTrigger>
@@ -290,23 +336,6 @@ export default function ClientsPage() {
 					/>
 				</CardContent>
 			</Card>
-			<AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-						<AlertDialogDescription>
-							This action cannot be undone. This will permanently delete the
-							client and remove their data from our servers.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction onClick={confirmDeleteClient}>
-							Continue
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
 		</div>
 	);
 }

@@ -9,6 +9,7 @@ import VerifyEmailRequestPage from "./pages/auth/VerifyEmailRequestPage";
 import { RequireRole } from "./lib/RequireRole";
 import CoachDashboardPage from "./pages/dashboard/CoachDashboardPage";
 import ClientsPage from "./pages/clients/ClientsPage";
+import ClientsLookingForCoachPage from "./pages/clients/ClientsLookingForCoachPage";
 import OAuthCallbackPage from "./pages/auth/OAuthCallbackPage";
 import OAuthFinalizePage from "./pages/auth/OAuthFinalizePage";
 import AdminPage from "./pages/admin/AdminPage";
@@ -84,6 +85,16 @@ export function AppRoutes() {
 					<ProtectedRoute>
 						<RequireRole allow={["COACH", "ADMIN"]}>
 							<ClientsPage />
+						</RequireRole>
+					</ProtectedRoute>
+				}
+			/>
+			<Route
+				path="/clients/looking-for-coach"
+				element={
+					<ProtectedRoute>
+						<RequireRole allow={["COACH", "ADMIN"]}>
+							<ClientsLookingForCoachPage />
 						</RequireRole>
 					</ProtectedRoute>
 				}
