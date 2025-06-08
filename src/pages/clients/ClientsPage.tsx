@@ -8,7 +8,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ServerTable } from "@/components/shared/DataTable/ServerTable";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Column, ServerQuery } from "@/components/shared/DataTable/types";
 import {
 	Dialog,
@@ -19,6 +19,17 @@ import {
 	DialogTrigger,
 	DialogFooter,
 } from "@/components/ui/dialog";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
@@ -26,42 +37,18 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import CoachesApiClient from "@/api/coach/coach.api";
 import { showSuccess, showError } from "@/components/shared/utils/toast.util";
+import ClientsApiClient from "@/api/client/client.api";
+import { Client } from "@/api/client/client.types";
 
-interface Client {
+interface ClientTableData {
 	id: string;
 	name: string;
 	email: string;
 	activeProgram: string | null;
 	lastActivity: string;
 	isVerified: boolean;
+	lookingForCoach: boolean;
 }
-
-const mockClients: Client[] = [
-	{
-		id: "1",
-		name: "John Smith",
-		email: "john@example.com",
-		activeProgram: "Power Hypertrophy Split",
-		lastActivity: "2025-05-19",
-		isVerified: true,
-	},
-	{
-		id: "2",
-		name: "Maria Gonzalez",
-		email: "maria@example.com",
-		activeProgram: null,
-		lastActivity: "2025-05-10",
-		isVerified: false,
-	},
-	{
-		id: "3",
-		name: "Tom Lee",
-		email: "tom@example.com",
-		activeProgram: "Full Body Beginner",
-		lastActivity: "2025-05-20",
-		isVerified: true,
-	},
-];
 
 const inviteClientSchema = z.object({
 	email: z.string().email("Invalid email address"),
@@ -77,6 +64,41 @@ export default function ClientsPage() {
 		orderByProperty: "name",
 		ascending: true,
 	});
+	const [clients, setClients] = useState<ClientTableData[]>([]);
+	const [loading, setLoading] = useState<boolean>(true);
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+	const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+	const [showInviteClientDialog, setShowInviteClientDialog] = useState(false);
+	const [showViewClientDialog, setShowViewClientDialog] = useState(false);
+
+	useEffect(() => {
+		fetchClients();
+	}, [query]);
+
+	async function fetchClients() {
+		try {
+			setLoading(true);
+			const fetchedClients: Client[] =
+				await ClientsApiClient.getInstance().getAll();
+
+			const transformedClients: ClientTableData[] = fetchedClients.map(
+				(client) => ({
+					id: client.id,
+					name: client.user?.name || "N/A",
+					email: client.user?.email || "N/A",
+					activeProgram: null, // Placeholder: Need active program from API
+					lastActivity: "", // Placeholder: Need last activity from API
+					isVerified: client.user?.emailVerified || false,
+					lookingForCoach: client.lookingForCoach ?? true,
+				})
+			);
+			setClients(transformedClients);
+		} catch (error) {
+			showError(error, "Failed to fetch clients.");
+		} finally {
+			setLoading(false);
+		}
+	}
 
 	const form = useForm<InviteClientFormValues>({
 		resolver: zodResolver(inviteClientSchema),
@@ -90,17 +112,34 @@ export default function ClientsPage() {
 			await CoachesApiClient.getInstance().inviteClient(values);
 			showSuccess(`An invitation has been sent to ${values.email}.`);
 			form.reset();
+			setShowInviteClientDialog(false); // Close the dialog on successful invitation
+			await fetchClients(); // Refresh client list after inviting a new client
 		} catch (error) {
 			showError(error, "Failed to send invitation.");
 		}
 	}
 
-	const filteredClients = mockClients.filter((client) =>
+	async function confirmDeleteClient() {
+		if (clientToDelete) {
+			try {
+				await ClientsApiClient.getInstance().delete(clientToDelete);
+				showSuccess("Client deleted successfully.");
+				await fetchClients(); // Refresh client list after deleting
+			} catch (error) {
+				showError(error, "Failed to delete client.");
+			} finally {
+				setClientToDelete(null);
+				setShowDeleteConfirm(false);
+			}
+		}
+	}
+
+	const filteredClients = clients.filter((client) =>
 		client.name.toLowerCase().includes(query.searchText?.toLowerCase() ?? "")
 	);
 
 	const sortedClients = [...filteredClients].sort((a, b) => {
-		const key = query.orderByProperty as keyof Client;
+		const key = query.orderByProperty as keyof ClientTableData;
 		const valA = a[key] ?? "";
 		const valB = b[key] ?? "";
 
@@ -114,9 +153,18 @@ export default function ClientsPage() {
 		query.pageNumber * query.pageSize
 	);
 
-	const columns: Column<Client>[] = [
+	const columns: Column<ClientTableData>[] = [
 		{ key: "name", label: "Name", sortable: true },
 		{ key: "email", label: "Email", sortable: true },
+		{
+			key: "lookingForCoach",
+			label: "Status",
+			render: (row) => (
+				<Badge variant={row.lookingForCoach ? "secondary" : "default"}>
+					{row.lookingForCoach ? "Looking for Coach" : "Assigned"}
+				</Badge>
+			),
+		},
 		{
 			key: "activeProgram",
 			label: "Program",
@@ -138,10 +186,83 @@ export default function ClientsPage() {
 		{
 			key: "id",
 			label: "Actions",
-			render: () => (
-				<Button size="sm" variant="outline">
-					View
-				</Button>
+			render: (row) => (
+				<div className="flex space-x-2">
+					<Dialog
+						open={showViewClientDialog}
+						onOpenChange={setShowViewClientDialog}
+					>
+						<DialogTrigger asChild>
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() => setShowViewClientDialog(true)}
+							>
+								View
+							</Button>
+						</DialogTrigger>
+						<DialogContent className="sm:max-w-[600px]">
+							<DialogHeader>
+								<DialogTitle>Client Details: {row.name}</DialogTitle>
+								<DialogDescription>
+									View client programs and training history.
+								</DialogDescription>
+							</DialogHeader>
+							<div className="py-4">
+								<p>Email: {row.email}</p>
+								<p>Verified: {row.isVerified ? "Yes" : "No"}</p>
+								<h3 className="text-lg font-semibold mt-4">Programs</h3>
+								<p className="text-muted-foreground">
+									No programs assigned yet.
+								</p>
+								<h3 className="text-lg font-semibold mt-4">Trainings</h3>
+								<p className="text-muted-foreground">
+									No training history available.
+								</p>
+							</div>
+							<DialogFooter>
+								<Button
+									type="button"
+									onClick={() => setShowViewClientDialog(false)}
+								>
+									Close
+								</Button>
+							</DialogFooter>
+						</DialogContent>
+					</Dialog>
+					<AlertDialog
+						open={showDeleteConfirm}
+						onOpenChange={setShowDeleteConfirm}
+					>
+						<AlertDialogTrigger asChild>
+							<Button
+								size="sm"
+								variant="destructive"
+								onClick={() => {
+									setClientToDelete(row.id);
+									setShowDeleteConfirm(true);
+								}}
+							>
+								Delete
+							</Button>
+						</AlertDialogTrigger>
+						<AlertDialogContent>
+							<AlertDialogHeader>
+								<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+								<AlertDialogDescription>
+									This action cannot be undone. This will permanently delete the
+									client and remove their data from our servers.
+								</AlertDialogDescription>
+							</AlertDialogHeader>
+							<AlertDialogFooter>
+								<AlertDialogCancel>Cancel</AlertDialogCancel>
+								<AlertDialogAction onClick={confirmDeleteClient}>
+									Continue
+								</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
+				</div>
 			),
 		},
 	];
@@ -158,7 +279,10 @@ export default function ClientsPage() {
 							View client activity, program status, and email verification.
 						</CardDescription>
 					</div>
-					<Dialog>
+					<Dialog
+						open={showInviteClientDialog}
+						onOpenChange={setShowInviteClientDialog}
+					>
 						<DialogTrigger asChild>
 							<Button className="mt-4">Invite Client</Button>
 						</DialogTrigger>
@@ -201,11 +325,11 @@ export default function ClientsPage() {
 					</Dialog>
 				</CardHeader>
 				<CardContent>
-					<ServerTable<Client>
+					<ServerTable<ClientTableData>
 						data={pagedClients}
 						columns={columns}
 						totalCount={filteredClients.length}
-						loading={false}
+						loading={loading}
 						query={query}
 						setQuery={setQuery}
 						getRowId={(row) => row.id}
