@@ -10,10 +10,13 @@ import { RequireRole } from "./lib/RequireRole";
 import CoachDashboardPage from "./pages/dashboard/CoachDashboardPage";
 import ClientsPage from "./pages/clients/ClientsPage";
 import ClientsLookingForCoachPage from "./pages/clients/ClientsLookingForCoachPage";
+import CoachesLookingForClientsPage from "./pages/coaches/CoachesLookingForClientsPage";
 import OAuthCallbackPage from "./pages/auth/OAuthCallbackPage";
 import OAuthFinalizePage from "./pages/auth/OAuthFinalizePage";
 import AdminPage from "./pages/admin/AdminPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminCoachesPage from "./pages/admin/AdminCoachesPage";
+import AdminClientsPage from "./pages/admin/AdminClientsPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import RequestPasswordResetPage from "./pages/auth/RequestPasswordResetPage";
 import CoachExercisesPage from "./pages/exercises/CoachExercisesPage";
@@ -70,6 +73,28 @@ export function AppRoutes() {
 			/>
 
 			<Route
+				path="/admin/coaches"
+				element={
+					<ProtectedRoute>
+						<RequireRole allow={["ADMIN"]}>
+							<AdminCoachesPage />
+						</RequireRole>
+					</ProtectedRoute>
+				}
+			/>
+
+			<Route
+				path="/admin/clients"
+				element={
+					<ProtectedRoute>
+						<RequireRole allow={["ADMIN"]}>
+							<AdminClientsPage />
+						</RequireRole>
+					</ProtectedRoute>
+				}
+			/>
+
+			<Route
 				path="/dashboard"
 				element={
 					<ProtectedRoute>
@@ -95,6 +120,17 @@ export function AppRoutes() {
 					<ProtectedRoute>
 						<RequireRole allow={["COACH", "ADMIN"]}>
 							<ClientsLookingForCoachPage />
+						</RequireRole>
+					</ProtectedRoute>
+				}
+			/>
+
+			<Route
+				path="/coaches/looking-for-clients"
+				element={
+					<ProtectedRoute>
+						<RequireRole allow={["CLIENT", "ADMIN"]}>
+							<CoachesLookingForClientsPage />
 						</RequireRole>
 					</ProtectedRoute>
 				}

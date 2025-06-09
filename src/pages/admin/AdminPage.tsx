@@ -10,6 +10,18 @@ const adminSections = [
 		disabled: false,
 	},
 	{
+		label: "Coaches",
+		description: "Manage coach profiles and their availability.",
+		path: "/admin/coaches",
+		disabled: false,
+	},
+	{
+		label: "Clients",
+		description: "Manage client profiles and their coach assignments.",
+		path: "/admin/clients",
+		disabled: false,
+	},
+	{
 		label: "Exercises",
 		description: "Manage all exercises in the system.",
 		path: "/admin/exercises",

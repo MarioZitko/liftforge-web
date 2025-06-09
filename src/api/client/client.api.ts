@@ -4,6 +4,7 @@ import {
 	CreateClientDto,
 	UpdateClientDto,
 	ClientProgram,
+	ClientWithDetailsDto,
 } from "./client.types";
 import { ApiSuccessResponse } from "@/api/types";
 
@@ -21,8 +22,10 @@ export default class ClientsApiClient extends BaseApi {
 		return ClientsApiClient.instance;
 	}
 
-	public async getAll(): Promise<Client[]> {
-		const res = await this.axiosInstance.get<ApiSuccessResponse<Client[]>>("/");
+	public async getAll(): Promise<ClientWithDetailsDto[]> {
+		const res = await this.axiosInstance.get<
+			ApiSuccessResponse<ClientWithDetailsDto[]>
+		>("/");
 		return res.data.data;
 	}
 
@@ -43,6 +46,13 @@ export default class ClientsApiClient extends BaseApi {
 			`/${id}`,
 			data
 		);
+		return res.data.data;
+	}
+
+	public async getOne(id: string): Promise<ClientWithDetailsDto> {
+		const res = await this.axiosInstance.get<
+			ApiSuccessResponse<ClientWithDetailsDto>
+		>(`/${id}`);
 		return res.data.data;
 	}
 

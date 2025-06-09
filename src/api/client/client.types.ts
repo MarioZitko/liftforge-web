@@ -1,14 +1,9 @@
 export interface Client {
 	id: string;
 	userId: string;
-	dateOfBirth?: Date;
-	coachId?: string;
+	dateOfBirth?: Date | null;
 	lookingForCoach?: boolean;
-	user?: {
-		name: string;
-		email: string;
-		emailVerified: boolean;
-	};
+	coachId?: string | null;
 }
 
 export interface ClientProgram {
@@ -28,6 +23,19 @@ export interface CreateClientDto {
 }
 
 export interface UpdateClientDto {
-	dateOfBirth?: Date;
-	coachId?: string;
+	dateOfBirth?: Date | null;
+	lookingForCoach?: boolean;
+	coachId?: string | null;
+}
+
+export class ClientWithDetailsDto {
+	id!: string;
+	userId!: string;
+	dateOfBirth?: Date | null;
+	lookingForCoach!: boolean;
+	coachId?: string | null;
+	user!: {
+		name: string | null;
+		email: string;
+	};
 }

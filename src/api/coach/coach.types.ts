@@ -1,7 +1,8 @@
 export interface Coach {
 	id: string;
 	userId: string;
-	certification?: string;
+	certification?: string | null;
+	lookingForClients?: boolean;
 }
 
 export interface CreateCoachDto {
@@ -10,9 +11,24 @@ export interface CreateCoachDto {
 }
 
 export interface UpdateCoachDto {
-	certification?: string;
+	certification?: string | null;
+	lookingForClients?: boolean;
 }
 
 export interface InviteClientDto {
 	email: string;
+}
+
+export class CoachWithDetailsDto {
+	id!: string;
+	userId!: string;
+	certification?: string | null;
+	lookingForClients!: boolean;
+	user!: {
+		name: string | null;
+		email: string;
+	};
+	_count!: {
+		clients: number;
+	};
 }

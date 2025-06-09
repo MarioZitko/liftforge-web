@@ -4,6 +4,7 @@ import {
 	CreateCoachDto,
 	UpdateCoachDto,
 	InviteClientDto,
+	CoachWithDetailsDto,
 } from "./coach.types";
 import { ApiSuccessResponse, GenericMessageResponse } from "@/api/types";
 import { Client } from "../client/client.types";
@@ -22,8 +23,10 @@ export default class CoachesApiClient extends BaseApi {
 		return CoachesApiClient.instance;
 	}
 
-	public async getAll(): Promise<Coach[]> {
-		const res = await this.axiosInstance.get<ApiSuccessResponse<Coach[]>>("/");
+	public async getAll(): Promise<CoachWithDetailsDto[]> {
+		const res = await this.axiosInstance.get<
+			ApiSuccessResponse<CoachWithDetailsDto[]>
+		>("/");
 		return res.data.data;
 	}
 
@@ -60,6 +63,15 @@ export default class CoachesApiClient extends BaseApi {
 		const res = await this.axiosInstance.post<
 			ApiSuccessResponse<GenericMessageResponse>
 		>("/invite-client", data);
+		return res.data.data;
+	}
+
+	public async getAvailableCoachesWithClientCount(): Promise<
+		CoachWithDetailsDto[]
+	> {
+		const res = await this.axiosInstance.get<
+			ApiSuccessResponse<CoachWithDetailsDto[]>
+		>("/available");
 		return res.data.data;
 	}
 }

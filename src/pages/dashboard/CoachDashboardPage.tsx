@@ -7,8 +7,60 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { useUserStore } from "@/store/userStore";
+import { useEffect, useState } from "react";
+import CoachesApiClient from "@/api/coach/coach.api";
+import { showError, showSuccess } from "@/components/shared/utils/toast.util";
+import { Coach } from "@/api/coach/coach.types";
 
 export default function CoachDashboardPage() {
+	const user = useUserStore((s) => s.user);
+	const [coachData, setCoachData] = useState<Coach | null>(null);
+	const [loadingStatus, setLoadingStatus] = useState(true);
+
+	useEffect(() => {
+		if (user?.userId) {
+			fetchCoachStatus(user.userId);
+		}
+	}, [user]);
+
+	async function fetchCoachStatus(userId: string) {
+		try {
+			setLoadingStatus(true);
+			const allCoaches = await CoachesApiClient.getInstance().getAll();
+			const currentCoach = allCoaches.find((coach) => coach.userId === userId);
+			if (currentCoach) {
+				setCoachData(currentCoach);
+			}
+		} catch (error) {
+			showError(error, "Failed to fetch coach status.");
+		} finally {
+			setLoadingStatus(false);
+		}
+	}
+
+	async function handleLookingForClientsToggle(checked: boolean) {
+		if (!user?.userId || !coachData?.id) return; // Ensure coachData.id is available
+
+		try {
+			await CoachesApiClient.getInstance().update(coachData.id, {
+				lookingForClients: checked,
+			});
+			setCoachData((prev) =>
+				prev ? { ...prev, lookingForClients: checked } : null
+			);
+			showSuccess(
+				`Successfully updated status to ${
+					checked ? "looking for clients" : "not looking for clients"
+				}.`
+			);
+		} catch (error) {
+			showError(error, "Failed to update looking for clients status.");
+		}
+	}
+
 	return (
 		<div className="space-y-6 px-4 py-6 max-w-screen-xl mx-auto">
 			<h1 className="text-2xl font-bold">Coach Dashboard</h1>
@@ -17,6 +69,33 @@ export default function CoachDashboardPage() {
 				<ClientOverviewCard />
 				<ProgramStatsCard />
 			</div>
+
+			<Card>
+				<CardHeader>
+					<CardTitle>Client Acquisition Status</CardTitle>
+					<CardDescription>
+						Control whether you are visible to new clients.
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="flex items-center space-x-2">
+					{loadingStatus ? (
+						<div>Loading status...</div>
+					) : (
+						<>
+							<Switch
+								id="looking-for-clients"
+								checked={coachData?.lookingForClients ?? false}
+								onCheckedChange={handleLookingForClientsToggle}
+							/>
+							<Label htmlFor="looking-for-clients">
+								{coachData?.lookingForClients
+									? "Actively looking for new clients"
+									: "Not looking for new clients"}
+							</Label>
+						</>
+					)}
+				</CardContent>
+			</Card>
 
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 				<RecentActivityCard />

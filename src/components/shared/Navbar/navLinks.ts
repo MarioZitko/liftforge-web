@@ -15,4 +15,5 @@ export const adminLinks = [
 	...coachLinks,
 	...clientLinks.filter((link) => link.to !== "/dashboard"), // avoid duplicate dashboard
 	{ to: "/admin", label: "Administration" },
+	{ to: "/coaches/looking-for-clients", label: "Coaches Looking for Clients" },
 ];
