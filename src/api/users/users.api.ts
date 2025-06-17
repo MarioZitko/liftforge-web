@@ -1,6 +1,10 @@
 import BaseApi from "@/lib/base.api";
 import { User, CreateUserDto, UpdateUserDto } from "./users.types";
 import { ApiSuccessResponse } from "@/api/types";
+import {
+	PaginatedRequest,
+	PaginatedResponse,
+} from "@/components/shared/DataTable/types";
 
 export default class UsersApiClient extends BaseApi {
 	private static instance: UsersApiClient;
@@ -38,6 +42,15 @@ export default class UsersApiClient extends BaseApi {
 			`/${id}`,
 			data
 		);
+		return res.data.data;
+	}
+
+	public async getPaginated(
+		request: PaginatedRequest
+	): Promise<PaginatedResponse<User>> {
+		const res = await this.axiosInstance.get<
+			ApiSuccessResponse<PaginatedResponse<User>>
+		>("/paginated", { params: request });
 		return res.data.data;
 	}
 }

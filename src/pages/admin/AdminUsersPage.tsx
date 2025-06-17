@@ -13,6 +13,7 @@ import {
 	Column,
 	ServerQuery,
 	TableFilter,
+	PaginatedRequest,
 } from "@/components/shared/DataTable/types";
 import { User } from "@/api/users/users.types";
 import UsersApiClient from "@/api/users/users.api";
@@ -41,25 +42,42 @@ export default function AdminUsersPage() {
 	});
 
 	const [users, setUsers] = useState<User[]>([]);
+	const [totalCount, setTotalCount] = useState(0);
 	const [loading, setLoading] = useState(false);
 	const [editUser, setEditUser] = useState<User | null>(null);
 	const [showModal, setShowModal] = useState(false);
 	const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
 	// Filter states
-	const [roleFilter, setRoleFilter] = useState("");
-	const [verifiedFilter, setVerifiedFilter] = useState("");
+	const [roleFilter, setRoleFilter] = useState("All");
+	const [verifiedFilter, setVerifiedFilter] = useState("All");
 
-	const fetchUsers = () => {
+	const fetchUsers = async () => {
 		setLoading(true);
-		usersApi
-			.getAll()
-			.then(setUsers)
-			.catch(() => showError("Failed to fetch users"))
-			.finally(() => setLoading(false));
+		try {
+			const request: PaginatedRequest = {
+				...query,
+				filters: {
+					role: roleFilter === "All" ? "" : roleFilter,
+					verified: verifiedFilter === "All" ? "" : verifiedFilter,
+				},
+			};
+
+			// This assumes your API now supports server-side pagination
+			const response = await usersApi.getPaginated(request);
+			setUsers(response.data);
+			setTotalCount(response.totalCount);
+		} catch (error) {
+			showError(`Failed to fetch users: ${error}`);
+		} finally {
+			setLoading(false);
+		}
 	};
 
-	useEffect(fetchUsers, []);
+	// Fetch users whenever query or filters change
+	useEffect(() => {
+		fetchUsers();
+	}, [query, roleFilter, verifiedFilter]);
 
 	const handleDelete = async (id: string) => {
 		try {
@@ -71,43 +89,14 @@ export default function AdminUsersPage() {
 		}
 	};
 
-	const filtered = users
-		.filter((u) =>
-			u.email.toLowerCase().includes((query.searchText ?? "").toLowerCase())
-		)
-		.filter((u) =>
-			roleFilter && roleFilter !== "All" ? u.role === roleFilter : true
-		)
-
-		.filter((u) =>
-			verifiedFilter === "verified"
-				? u.emailVerified
-				: verifiedFilter === "unverified"
-				? !u.emailVerified
-				: true
-		);
-
-	const sorted = [...filtered].sort((a, b) => {
-		const key = query.orderByProperty as keyof User;
-		const valA = a[key] ?? "";
-		const valB = b[key] ?? "";
-		return query.ascending
-			? String(valA).localeCompare(String(valB))
-			: String(valB).localeCompare(String(valA));
-	});
-
-	const paged = sorted.slice(
-		(query.pageNumber - 1) * query.pageSize,
-		query.pageNumber * query.pageSize
-	);
-
 	const columns: Column<User>[] = [
 		{ key: "email", label: "Email", sortable: true },
 		{ key: "name", label: "Name", sortable: true },
 		{
 			key: "role",
 			label: "Role",
-			render: (u) => <Badge>{u.role}</Badge>,
+			sortable: true,
+			render: (u) => <Badge variant="secondary">{u.role}</Badge>,
 		},
 		{
 			key: "emailVerified",
@@ -170,23 +159,65 @@ export default function AdminUsersPage() {
 		},
 	];
 
+	// Custom mobile card renderer
+	const mobileCardRenderer = (user: User) => (
+		<div className="space-y-3">
+			<div className="flex justify-between items-start">
+				<div className="flex-1">
+					<h3 className="font-medium">{user.name || "No name"}</h3>
+					<p className="text-sm text-muted-foreground">{user.email}</p>
+				</div>
+				<div className="flex flex-col gap-1 items-end">
+					<Badge variant="secondary" className="text-xs">
+						{user.role}
+					</Badge>
+					<Badge
+						variant={user.emailVerified ? "default" : "destructive"}
+						className="text-xs"
+					>
+						{user.emailVerified ? "Verified" : "Unverified"}
+					</Badge>
+				</div>
+			</div>
+			<div className="flex gap-2 pt-2 border-t">
+				<Button
+					variant="outline"
+					size="sm"
+					className="flex-1"
+					onClick={() => {
+						setEditUser(user);
+						setShowModal(true);
+					}}
+				>
+					Edit
+				</Button>
+				<Button
+					variant="destructive"
+					size="sm"
+					className="flex-1"
+					onClick={() => setUserToDelete(user)}
+				>
+					Delete
+				</Button>
+			</div>
+		</div>
+	);
+
 	return (
 		<>
 			<div className="space-y-6 px-4 py-6 max-w-screen-xl mx-auto">
 				<h1 className="text-2xl font-bold">User Administration</h1>
 
 				<Card>
-					<CardHeader className="flex flex-col items-center text-center">
-						<div>
-							<CardTitle>All Users</CardTitle>
-							<CardDescription>Manage registered users</CardDescription>
-						</div>
+					<CardHeader>
+						<CardTitle>All Users</CardTitle>
+						<CardDescription>Manage registered users</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<ServerTable<User>
-							data={paged}
+							data={users}
 							columns={columns}
-							totalCount={filtered.length}
+							totalCount={totalCount}
 							loading={loading}
 							query={query}
 							setQuery={setQuery}
@@ -197,6 +228,7 @@ export default function AdminUsersPage() {
 							}}
 							createLabel="Create User"
 							filters={filters}
+							mobileCardRenderer={mobileCardRenderer}
 						/>
 					</CardContent>
 				</Card>
