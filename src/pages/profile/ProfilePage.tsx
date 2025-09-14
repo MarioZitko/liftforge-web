@@ -217,6 +217,14 @@ export default function ProfilePage() {
                     {coachData.certification || "Not specified"}
                   </p>
                 </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Looking for Client
+                  </label>
+                  <p className="text-base">
+                    {coachData.lookingForClient ? "Yes" : "No"}
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="text-muted-foreground">No coach data found</div>

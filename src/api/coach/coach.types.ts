@@ -1,7 +1,9 @@
 export interface Coach {
   id: string;
   userId: string;
+  bio?: string;
   certification?: string;
+  lookingForClient?: boolean;
   user?: {
     name: string;
     email: string;
