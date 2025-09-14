@@ -6,9 +6,11 @@ import UsersApiClient from "@/api/users/users.api";
 import { User } from "@/api/users/users.types";
 import { useUserStore } from "@/store/userStore";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfilePage() {
   const user = useUserStore((s) => s.user);
+  const navigate = useNavigate();
   const [userData, setUserData] = useState<User | null>(null);
   const [clientData, setClientData] = useState<Client | null>(null);
   const [coachData, setCoachData] = useState<Coach | null>(null);
@@ -24,35 +26,6 @@ export default function ProfilePage() {
         const usersApi = UsersApiClient.getInstance();
         const fetchedUser = await usersApi.getMe();
         setUserData(fetchedUser);
-        if (user.role === "CLIENT") {
-          if (userData) {
-            const clientApi = ClientsApiClient.getInstance();
-            let data = await clientApi.getByUserId(user.userId);
-            data = {
-              ...data,
-              user: {
-                name: userData.name || "",
-                email: userData.email || "",
-                emailVerified: userData.emailVerified || false,
-              },
-            };
-            setClientData(data);
-          }
-        } else if (user.role === "COACH") {
-          if (userData) {
-            const coachApi = CoachesApiClient.getInstance();
-            let data = await coachApi.getByUserId(user.userId);
-            data = {
-              ...data,
-              user: {
-                name: userData.name || "",
-                email: userData.email || "",
-                emailVerified: userData.emailVerified || false,
-              },
-            };
-            setCoachData(data);
-          }
-        }
       } catch (error) {
         console.error("Error fetching role data:", error);
       } finally {
@@ -62,6 +35,44 @@ export default function ProfilePage() {
 
     fetchRoleData();
   }, [user]);
+
+  useEffect(() => {
+    const fetchRoleSpecificData = async () => {
+      if (!userData || !user) return;
+
+      try {
+        if (userData.role === "CLIENT") {
+          const clientApi = ClientsApiClient.getInstance();
+          let data = await clientApi.getByUserId(user.userId);
+          data = {
+            ...data,
+            user: {
+              name: userData.name || "",
+              email: userData.email || "",
+              emailVerified: userData.emailVerified || false,
+            },
+          };
+          setClientData(data);
+        } else if (userData.role === "COACH") {
+          const coachApi = CoachesApiClient.getInstance();
+          let data = await coachApi.getByUserId(user.userId);
+          data = {
+            ...data,
+            user: {
+              name: userData.name || "",
+              email: userData.email || "",
+              emailVerified: userData.emailVerified || false,
+            },
+          };
+          setCoachData(data);
+        }
+      } catch (error) {
+        console.error("Error fetching detailed data:", error);
+      }
+    };
+
+    fetchRoleSpecificData();
+  }, [userData, user]);
 
   if (!user) return null;
 
@@ -92,6 +103,27 @@ export default function ProfilePage() {
                 User ID
               </label>
               <p className="text-base">{user.userId}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">
+                Email Verified
+              </label>
+              <p className="text-base">
+                {userData?.emailVerified ? "Yes" : "No"}
+              </p>
+              {userData?.emailVerified === false && (
+                <div className="space-y-2">
+                  <p className="text-sm text-red-500">
+                    Please verify your email to access all features.
+                  </p>
+                  <button
+                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    onClick={() => navigate("/verify-email")}
+                  >
+                    Verify Email
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -175,14 +207,6 @@ export default function ProfilePage() {
                   </label>
                   <p className="text-base">
                     {coachData.user?.email || "Not provided"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Email Verified
-                  </label>
-                  <p className="text-base">
-                    {coachData.user?.emailVerified ? "Yes" : "No"}
                   </p>
                 </div>
                 <div>
