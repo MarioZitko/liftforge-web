@@ -31,4 +31,6 @@ export interface CreateClientDto {
 export interface UpdateClientDto {
   dateOfBirth?: Date;
   coachId?: string;
+  lookingForCoach?: boolean;
+  bio?: string;
 }

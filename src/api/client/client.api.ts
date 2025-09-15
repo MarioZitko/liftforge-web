@@ -33,6 +33,13 @@ export default class ClientsApiClient extends BaseApi {
     );
     return res.data.data;
   }
+
+  public async getByCoachId(id: string): Promise<Client[]> {
+    const res = await this.axiosInstance.get<ApiSuccessResponse<Client[]>>(
+      `/coach/${id}`
+    );
+    return res.data.data;
+  }
   public async getAll(): Promise<Client[]> {
     const res = await this.axiosInstance.get<ApiSuccessResponse<Client[]>>("/");
     return res.data.data;
