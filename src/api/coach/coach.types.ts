@@ -18,6 +18,8 @@ export interface CreateCoachDto {
 
 export interface UpdateCoachDto {
   certification?: string;
+  bio?: string;
+  lookingForClient?: boolean;
 }
 
 export interface InviteClientDto {

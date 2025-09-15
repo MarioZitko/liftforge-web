@@ -15,6 +15,121 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const [userData, setUserData] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    dateOfBirth: "",
+    bio: "",
+    certification: "",
+    lookingForCoach: false,
+    lookingForClient: false,
+  });
+
+  const handleEditClick = () => {
+    if (user?.role === "CLIENT" && clientStore.client) {
+      // Format date properly for date input
+      let formattedDate = "";
+      if (clientStore.client.dateOfBirth) {
+        const date = new Date(clientStore.client.dateOfBirth);
+        formattedDate = date.toISOString().split("T")[0];
+      }
+
+      setEditForm({
+        name: clientStore.client.user?.name || "",
+        dateOfBirth: formattedDate,
+        bio: clientStore.client.bio || "",
+        certification: "",
+        lookingForCoach: clientStore.client.lookingForCoach || false,
+        lookingForClient: false,
+      });
+      setIsEditModalOpen(true);
+    } else if (user?.role === "COACH" && coachStore.coach) {
+      setEditForm({
+        name: coachStore.coach.user?.name || "",
+        dateOfBirth: "",
+        bio: coachStore.coach.bio || "",
+        certification: coachStore.coach.certification || "",
+        lookingForCoach: false,
+        lookingForClient: coachStore.coach.lookingForClient || false,
+      });
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleEditSubmit = async () => {
+    if (!user?.userId) return;
+
+    setIsUpdating(true);
+    try {
+      const usersApi = UsersApiClient.getInstance();
+
+      // Update user name
+      await usersApi.update(user.userId, { ...userData, name: editForm.name });
+
+      if (user.role === "CLIENT" && clientStore.client) {
+        const clientApi = ClientsApiClient.getInstance();
+
+        // Update client data
+        await clientApi.update(clientStore.client.id, {
+          dateOfBirth: new Date(editForm.dateOfBirth),
+          bio: editForm.bio,
+          lookingForCoach: editForm.lookingForCoach,
+        });
+
+        // Update the store with new data
+        const updatedClient = {
+          ...clientStore.client,
+          dateOfBirth: editForm.dateOfBirth
+            ? new Date(editForm.dateOfBirth)
+            : clientStore.client.dateOfBirth,
+          bio: editForm.bio,
+          lookingForCoach: editForm.lookingForCoach,
+          user: {
+            ...clientStore.client.user,
+            name: editForm.name,
+            email: clientStore.client.user?.email || "",
+            emailVerified: clientStore.client.user?.emailVerified ?? false,
+          },
+        };
+        clientStore.setClient(updatedClient);
+      } else if (user.role === "COACH" && coachStore.coach) {
+        const coachApi = CoachesApiClient.getInstance();
+
+        // Update coach data
+        await coachApi.update(coachStore.coach.id, {
+          bio: editForm.bio,
+          certification: editForm.certification,
+          lookingForClient: editForm.lookingForClient,
+        });
+
+        // Update the store with new data
+        const updatedCoach = {
+          ...coachStore.coach,
+          bio: editForm.bio,
+          certification: editForm.certification,
+          lookingForClient: editForm.lookingForClient,
+          user: {
+            ...coachStore.coach.user,
+            name: editForm.name,
+            email: coachStore.coach.user?.email || "",
+            emailVerified: coachStore.coach.user?.emailVerified ?? false,
+          },
+        };
+        coachStore.setCoach(updatedCoach);
+      }
+
+      // Refresh userData
+      const updatedUser = await usersApi.getMe();
+      setUserData(updatedUser);
+
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error("Error updating data:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   // Fetch role-specific data from API
   useEffect(() => {
@@ -127,7 +242,6 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-
         {/* Client-specific Card */}
         {user.role === "CLIENT" && (
           <div className="bg-card rounded-lg border p-6 space-y-4">
@@ -188,13 +302,18 @@ export default function ProfilePage() {
                     {clientStore.client.lookingForCoach ? "Yes" : "No"}
                   </p>
                 </div>
+                <button
+                  onClick={handleEditClick}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                >
+                  Edit
+                </button>
               </div>
             ) : (
               <div className="text-muted-foreground">No client data found</div>
             )}
           </div>
         )}
-
         {/* Coach-specific Card */}
         {user.role === "COACH" && (
           <div className="bg-card rounded-lg border p-6 space-y-4">
@@ -249,7 +368,6 @@ export default function ProfilePage() {
             )}
           </div>
         )}
-
         {/* Admin-specific Card */}
         {user.role === "ADMIN" && (
           <div className="bg-card rounded-lg border p-6 space-y-4">
@@ -274,6 +392,109 @@ export default function ProfilePage() {
                   Last Login
                 </label>
                 <p className="text-base">Today</p>
+              </div>
+            </div>
+          </div>
+        )}
+        {isEditModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-card rounded-lg border p-6 w-full max-w-md mx-4 shadow-lg">
+              <h3 className="text-xl font-semibold mb-4 text-foreground">
+                Edit Client Information
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.name}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, name: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground border-border"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
+                    Email (Read-only)
+                  </label>
+                  <input
+                    type="email"
+                    value={clientStore.client?.user?.email || ""}
+                    disabled
+                    className="w-full px-3 py-2 border rounded-md bg-muted text-muted-foreground border-border"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
+                    Date of Birth
+                  </label>
+                  <input
+                    type="date"
+                    value={editForm.dateOfBirth}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, dateOfBirth: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground border-border"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
+                    Bio
+                  </label>
+                  <textarea
+                    value={editForm.bio}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, bio: e.target.value })
+                    }
+                    rows={3}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground border-border resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="lookingForCoach"
+                    checked={editForm.lookingForCoach}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        lookingForCoach: e.target.checked,
+                      })
+                    }
+                    className="mr-2 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                  <label
+                    htmlFor="lookingForCoach"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Looking for Coach
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  disabled={isUpdating}
+                  className="flex-1 px-4 py-2 border border-border rounded-md hover:bg-muted transition-colors disabled:opacity-50 text-foreground"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleEditSubmit}
+                  disabled={isUpdating}
+                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {isUpdating ? "Updating..." : "Confirm"}
+                </button>
               </div>
             </div>
           </div>
