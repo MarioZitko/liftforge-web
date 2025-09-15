@@ -1,19 +1,19 @@
 import ClientsApiClient from "@/api/client/client.api";
-import { Client } from "@/api/client/client.types";
 import CoachesApiClient from "@/api/coach/coach.api";
-import { Coach } from "@/api/coach/coach.types";
 import UsersApiClient from "@/api/users/users.api";
 import { User } from "@/api/users/users.types";
+import { useClientStore } from "@/store/clientStore";
+import { useCoachStore } from "@/store/coachStore";
 import { useUserStore } from "@/store/userStore";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function ProfilePage() {
   const user = useUserStore((s) => s.user);
+  const coachStore = useCoachStore((s) => s);
+  const clientStore = useClientStore((s) => s);
   const navigate = useNavigate();
   const [userData, setUserData] = useState<User | null>(null);
-  const [clientData, setClientData] = useState<Client | null>(null);
-  const [coachData, setCoachData] = useState<Coach | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Fetch role-specific data from API
@@ -52,7 +52,7 @@ export default function ProfilePage() {
               emailVerified: userData.emailVerified || false,
             },
           };
-          setClientData(data);
+          clientStore.setClient(data);
         } else if (userData.role === "COACH") {
           const coachApi = CoachesApiClient.getInstance();
           let data = await coachApi.getByUserId(user.userId);
@@ -64,7 +64,7 @@ export default function ProfilePage() {
               emailVerified: userData.emailVerified || false,
             },
           };
-          setCoachData(data);
+          coachStore.setCoach(data);
         }
       } catch (error) {
         console.error("Error fetching detailed data:", error);
@@ -134,14 +134,14 @@ export default function ProfilePage() {
             <h2 className="text-xl font-semibold">Client Information</h2>
             {isLoading ? (
               <div className="text-muted-foreground">Loading...</div>
-            ) : clientData ? (
+            ) : clientStore.client ? (
               <div className="space-y-3">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">
                     Name
                   </label>
                   <p className="text-base">
-                    {clientData.user?.name || "Not provided"}
+                    {clientStore.client.user?.name || "Not provided"}
                   </p>
                 </div>
                 <div>
@@ -149,7 +149,7 @@ export default function ProfilePage() {
                     Email
                   </label>
                   <p className="text-base">
-                    {clientData.user?.email || "Not provided"}
+                    {clientStore.client.user?.email || "Not provided"}
                   </p>
                 </div>
                 <div>
@@ -157,9 +157,19 @@ export default function ProfilePage() {
                     Date of Birth
                   </label>
                   <p className="text-base">
-                    {clientData.dateOfBirth
-                      ? new Date(clientData.dateOfBirth).toLocaleDateString()
+                    {clientStore.client.dateOfBirth
+                      ? new Date(
+                          clientStore.client.dateOfBirth
+                        ).toLocaleDateString()
                       : "Not provided"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Bio
+                  </label>
+                  <p className="text-base">
+                    {clientStore.client.bio || "No bio available"}
                   </p>
                 </div>
                 <div>
@@ -167,7 +177,7 @@ export default function ProfilePage() {
                     Assigned Coach
                   </label>
                   <p className="text-base">
-                    {clientData.coachId || "No coach assigned"}
+                    {clientStore.client.coachId || "No coach assigned"}
                   </p>
                 </div>
                 <div>
@@ -175,7 +185,7 @@ export default function ProfilePage() {
                     Looking for Coach
                   </label>
                   <p className="text-base">
-                    {clientData.lookingForCoach ? "Yes" : "No"}
+                    {clientStore.client.lookingForCoach ? "Yes" : "No"}
                   </p>
                 </div>
               </div>
@@ -191,14 +201,14 @@ export default function ProfilePage() {
             <h2 className="text-xl font-semibold">Coach Information</h2>
             {isLoading ? (
               <div className="text-muted-foreground">Loading...</div>
-            ) : coachData ? (
+            ) : coachStore.coach ? (
               <div className="space-y-3">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">
                     Name
                   </label>
                   <p className="text-base">
-                    {coachData.user?.name || "Not provided"}
+                    {coachStore.coach.user?.name || "Not provided"}
                   </p>
                 </div>
                 <div>
@@ -206,7 +216,15 @@ export default function ProfilePage() {
                     Email
                   </label>
                   <p className="text-base">
-                    {coachData.user?.email || "Not provided"}
+                    {coachStore.coach.user?.email || "Not provided"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Bio
+                  </label>
+                  <p className="text-base">
+                    {coachStore.coach.bio || "No bio available"}
                   </p>
                 </div>
                 <div>
@@ -214,7 +232,7 @@ export default function ProfilePage() {
                     Certification
                   </label>
                   <p className="text-base">
-                    {coachData.certification || "Not specified"}
+                    {coachStore.coach.certification || "Not specified"}
                   </p>
                 </div>
                 <div>
@@ -222,7 +240,7 @@ export default function ProfilePage() {
                     Looking for Client
                   </label>
                   <p className="text-base">
-                    {coachData.lookingForClient ? "Yes" : "No"}
+                    {coachStore.coach.lookingForClient ? "Yes" : "No"}
                   </p>
                 </div>
               </div>
