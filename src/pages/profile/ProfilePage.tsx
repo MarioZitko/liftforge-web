@@ -3,6 +3,7 @@ import CoachesApiClient from "@/api/coach/coach.api";
 import UsersApiClient from "@/api/users/users.api";
 import { User } from "@/api/users/users.types";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useClientStore } from "@/store/clientStore";
@@ -201,9 +202,11 @@ export default function ProfilePage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Basic Information Card */}
-        <div className="bg-card rounded-lg border p-6 space-y-4">
-          <h2 className="text-xl font-semibold">User Information</h2>
-          <div className="space-y-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>User Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <div>
               <Label className="text-sm font-medium text-muted-foreground">
                 E-mail
@@ -241,142 +244,154 @@ export default function ProfilePage() {
                 </div>
               )}
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Client-specific Card */}
         {user.role === "CLIENT" && (
-          <div className="bg-card rounded-lg border p-6 space-y-4">
-            <h2 className="text-xl font-semibold">Client Information</h2>
-            {isLoading ? (
-              <div className="text-muted-foreground">Loading...</div>
-            ) : clientStore.client ? (
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Name
-                  </Label>
-                  <p className="text-base">
-                    {clientStore.client.user?.name || "Not provided"}
-                  </p>
+          <Card>
+            <CardHeader>
+              <CardTitle>Client Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-muted-foreground">Loading...</div>
+              ) : clientStore.client ? (
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      Name
+                    </Label>
+                    <p className="text-base">
+                      {clientStore.client.user?.name || "Not provided"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      Email
+                    </Label>
+                    <p className="text-base">
+                      {clientStore.client.user?.email || "Not provided"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      Date of Birth
+                    </Label>
+                    <p className="text-base">
+                      {clientStore.client.dateOfBirth
+                        ? new Date(
+                            clientStore.client.dateOfBirth
+                          ).toLocaleDateString()
+                        : "Not provided"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      Bio
+                    </Label>
+                    <p className="text-base">
+                      {clientStore.client.bio || "No bio available"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      Assigned Coach
+                    </Label>
+                    <p className="text-base">
+                      {clientStore.client.coachId || "No coach assigned"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      Looking for Coach
+                    </Label>
+                    <p className="text-base">
+                      {clientStore.client.lookingForCoach ? "Yes" : "No"}
+                    </p>
+                  </div>
+                  <Button onClick={handleEditClick} className="mt-4">
+                    Edit
+                  </Button>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Email
-                  </Label>
-                  <p className="text-base">
-                    {clientStore.client.user?.email || "Not provided"}
-                  </p>
+              ) : (
+                <div className="text-muted-foreground">
+                  No client data found
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Date of Birth
-                  </Label>
-                  <p className="text-base">
-                    {clientStore.client.dateOfBirth
-                      ? new Date(
-                          clientStore.client.dateOfBirth
-                        ).toLocaleDateString()
-                      : "Not provided"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Bio
-                  </Label>
-                  <p className="text-base">
-                    {clientStore.client.bio || "No bio available"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Assigned Coach
-                  </Label>
-                  <p className="text-base">
-                    {clientStore.client.coachId || "No coach assigned"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Looking for Coach
-                  </Label>
-                  <p className="text-base">
-                    {clientStore.client.lookingForCoach ? "Yes" : "No"}
-                  </p>
-                </div>
-                <Button onClick={handleEditClick} className="mt-4">
-                  Edit
-                </Button>
-              </div>
-            ) : (
-              <div className="text-muted-foreground">No client data found</div>
-            )}
-          </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Coach-specific Card */}
         {user.role === "COACH" && (
-          <div className="bg-card rounded-lg border p-6 space-y-4">
-            <h2 className="text-xl font-semibold">Coach Information</h2>
-            {isLoading ? (
-              <div className="text-muted-foreground">Loading...</div>
-            ) : coachStore.coach ? (
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Name
-                  </Label>
-                  <p className="text-base">
-                    {coachStore.coach.user?.name || "Not provided"}
-                  </p>
+          <Card>
+            <CardHeader>
+              <CardTitle>Coach Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-muted-foreground">Loading...</div>
+              ) : coachStore.coach ? (
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      Name
+                    </Label>
+                    <p className="text-base">
+                      {coachStore.coach.user?.name || "Not provided"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      Email
+                    </Label>
+                    <p className="text-base">
+                      {coachStore.coach.user?.email || "Not provided"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      Bio
+                    </Label>
+                    <p className="text-base">
+                      {coachStore.coach.bio || "No bio available"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      Certification
+                    </Label>
+                    <p className="text-base">
+                      {coachStore.coach.certification || "Not specified"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      Looking for Client
+                    </Label>
+                    <p className="text-base">
+                      {coachStore.coach.lookingForClient ? "Yes" : "No"}
+                    </p>
+                  </div>
+                  <Button onClick={handleEditClick} className="mt-4">
+                    Edit
+                  </Button>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Email
-                  </Label>
-                  <p className="text-base">
-                    {coachStore.coach.user?.email || "Not provided"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Bio
-                  </Label>
-                  <p className="text-base">
-                    {coachStore.coach.bio || "No bio available"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Certification
-                  </Label>
-                  <p className="text-base">
-                    {coachStore.coach.certification || "Not specified"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Looking for Client
-                  </Label>
-                  <p className="text-base">
-                    {coachStore.coach.lookingForClient ? "Yes" : "No"}
-                  </p>
-                </div>
-                <Button onClick={handleEditClick} className="mt-4">
-                  Edit
-                </Button>
-              </div>
-            ) : (
-              <div className="text-muted-foreground">No coach data found</div>
-            )}
-          </div>
+              ) : (
+                <div className="text-muted-foreground">No coach data found</div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Admin-specific Card */}
         {user.role === "ADMIN" && (
-          <div className="bg-card rounded-lg border p-6 space-y-4">
-            <h2 className="text-xl font-semibold">Admin Information</h2>
-            <div className="space-y-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Admin Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">
                   Access Level
@@ -397,8 +412,8 @@ export default function ProfilePage() {
                 </Label>
                 <p className="text-base">Today</p>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Edit Modal */}
