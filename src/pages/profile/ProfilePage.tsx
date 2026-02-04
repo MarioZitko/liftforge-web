@@ -5,11 +5,11 @@ import { User } from "@/api/users/users.types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useClientStore } from "@/store/clientStore";
 import { useCoachStore } from "@/store/coachStore";
 import { useUserStore } from "@/store/userStore";
-import { Label } from "@radix-ui/react-label";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -208,26 +208,26 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <Label className="text-sm font-medium text-muted-foreground">
+              <Label >
                 E-mail
               </Label>
               <p className="text-base">{user.email}</p>
             </div>
 
             <div>
-              <Label className="text-sm font-medium text-muted-foreground">
+              <Label>
                 Role
               </Label>
               <p className="text-base">{user.role}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-muted-foreground">
+              <Label>
                 User ID
               </Label>
               <p className="text-base">{user.userId}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-muted-foreground">
+              <Label>
                 Email Verified
               </Label>
               <p className="text-base">
@@ -259,7 +259,7 @@ export default function ProfilePage() {
               ) : clientStore.client ? (
                 <div className="space-y-3">
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">
+                    <Label>
                       Name
                     </Label>
                     <p className="text-base">
@@ -267,7 +267,7 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">
+                    <Label>
                       Email
                     </Label>
                     <p className="text-base">
@@ -275,7 +275,7 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">
+                    <Label>
                       Date of Birth
                     </Label>
                     <p className="text-base">
@@ -287,7 +287,7 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">
+                    <Label>
                       Bio
                     </Label>
                     <p className="text-base">
@@ -295,7 +295,7 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">
+                    <Label>
                       Assigned Coach
                     </Label>
                     <p className="text-base">
@@ -303,7 +303,7 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">
+                    <Label>
                       Looking for Coach
                     </Label>
                     <p className="text-base">
@@ -335,7 +335,7 @@ export default function ProfilePage() {
               ) : coachStore.coach ? (
                 <div className="space-y-3">
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">
+                    <Label>
                       Name
                     </Label>
                     <p className="text-base">
@@ -343,7 +343,7 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">
+                    <Label>
                       Email
                     </Label>
                     <p className="text-base">
@@ -351,7 +351,7 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">
+                    <Label>
                       Bio
                     </Label>
                     <p className="text-base">
@@ -359,7 +359,7 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">
+                    <Label>
                       Certification
                     </Label>
                     <p className="text-base">
@@ -367,7 +367,7 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">
+                    <Label>
                       Looking for Client
                     </Label>
                     <p className="text-base">
@@ -393,13 +393,13 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">
+                <Label>
                   Access Level
                 </Label>
                 <p className="text-base">Full System Access</p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">
+                <Label>
                   Permissions
                 </Label>
                 <p className="text-base">
@@ -407,7 +407,7 @@ export default function ProfilePage() {
                 </p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">
+                <Label>
                   Last Login
                 </Label>
                 <p className="text-base">Today</p>
