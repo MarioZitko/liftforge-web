@@ -2,6 +2,11 @@ import ClientsApiClient from "@/api/client/client.api";
 import CoachesApiClient from "@/api/coach/coach.api";
 import UsersApiClient from "@/api/users/users.api";
 import { User } from "@/api/users/users.types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useClientStore } from "@/store/clientStore";
 import { useCoachStore } from "@/store/coachStore";
 import { useUserStore } from "@/store/userStore";
@@ -197,32 +202,34 @@ export default function ProfilePage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Basic Information Card */}
-        <div className="bg-card rounded-lg border p-6 space-y-4">
-          <h2 className="text-xl font-semibold">User Information</h2>
-          <div className="space-y-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>User Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">
+              <Label >
                 E-mail
-              </label>
+              </Label>
               <p className="text-base">{user.email}</p>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-muted-foreground">
+              <Label>
                 Role
-              </label>
+              </Label>
               <p className="text-base">{user.role}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">
+              <Label>
                 User ID
-              </label>
+              </Label>
               <p className="text-base">{user.userId}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">
+              <Label>
                 Email Verified
-              </label>
+              </Label>
               <p className="text-base">
                 {userData?.emailVerified ? "Yes" : "No"}
               </p>
@@ -231,270 +238,329 @@ export default function ProfilePage() {
                   <p className="text-sm text-red-500">
                     Please verify your email to access all features.
                   </p>
-                  <button
-                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                    onClick={() => navigate("/verify-email")}
-                  >
+                  <Button size="sm" onClick={() => navigate("/verify-email")}>
                     Verify Email
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+
         {/* Client-specific Card */}
         {user.role === "CLIENT" && (
-          <div className="bg-card rounded-lg border p-6 space-y-4">
-            <h2 className="text-xl font-semibold">Client Information</h2>
-            {isLoading ? (
-              <div className="text-muted-foreground">Loading...</div>
-            ) : clientStore.client ? (
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Name
-                  </label>
-                  <p className="text-base">
-                    {clientStore.client.user?.name || "Not provided"}
-                  </p>
+          <Card>
+            <CardHeader>
+              <CardTitle>Client Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-muted-foreground">Loading...</div>
+              ) : clientStore.client ? (
+                <div className="space-y-3">
+                  <div>
+                    <Label>
+                      Name
+                    </Label>
+                    <p className="text-base">
+                      {clientStore.client.user?.name || "Not provided"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label>
+                      Email
+                    </Label>
+                    <p className="text-base">
+                      {clientStore.client.user?.email || "Not provided"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label>
+                      Date of Birth
+                    </Label>
+                    <p className="text-base">
+                      {clientStore.client.dateOfBirth
+                        ? new Date(
+                            clientStore.client.dateOfBirth
+                          ).toLocaleDateString()
+                        : "Not provided"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label>
+                      Bio
+                    </Label>
+                    <p className="text-base">
+                      {clientStore.client.bio || "No bio available"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label>
+                      Assigned Coach
+                    </Label>
+                    <p className="text-base">
+                      {clientStore.client.coachId || "No coach assigned"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label>
+                      Looking for Coach
+                    </Label>
+                    <p className="text-base">
+                      {clientStore.client.lookingForCoach ? "Yes" : "No"}
+                    </p>
+                  </div>
+                  <Button onClick={handleEditClick} className="mt-4">
+                    Edit
+                  </Button>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Email
-                  </label>
-                  <p className="text-base">
-                    {clientStore.client.user?.email || "Not provided"}
-                  </p>
+              ) : (
+                <div className="text-muted-foreground">
+                  No client data found
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Date of Birth
-                  </label>
-                  <p className="text-base">
-                    {clientStore.client.dateOfBirth
-                      ? new Date(
-                          clientStore.client.dateOfBirth
-                        ).toLocaleDateString()
-                      : "Not provided"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Bio
-                  </label>
-                  <p className="text-base">
-                    {clientStore.client.bio || "No bio available"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Assigned Coach
-                  </label>
-                  <p className="text-base">
-                    {clientStore.client.coachId || "No coach assigned"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Looking for Coach
-                  </label>
-                  <p className="text-base">
-                    {clientStore.client.lookingForCoach ? "Yes" : "No"}
-                  </p>
-                </div>
-                <button
-                  onClick={handleEditClick}
-                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                >
-                  Edit
-                </button>
-              </div>
-            ) : (
-              <div className="text-muted-foreground">No client data found</div>
-            )}
-          </div>
+              )}
+            </CardContent>
+          </Card>
         )}
+
         {/* Coach-specific Card */}
         {user.role === "COACH" && (
-          <div className="bg-card rounded-lg border p-6 space-y-4">
-            <h2 className="text-xl font-semibold">Coach Information</h2>
-            {isLoading ? (
-              <div className="text-muted-foreground">Loading...</div>
-            ) : coachStore.coach ? (
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Name
-                  </label>
-                  <p className="text-base">
-                    {coachStore.coach.user?.name || "Not provided"}
-                  </p>
+          <Card>
+            <CardHeader>
+              <CardTitle>Coach Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-muted-foreground">Loading...</div>
+              ) : coachStore.coach ? (
+                <div className="space-y-3">
+                  <div>
+                    <Label>
+                      Name
+                    </Label>
+                    <p className="text-base">
+                      {coachStore.coach.user?.name || "Not provided"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label>
+                      Email
+                    </Label>
+                    <p className="text-base">
+                      {coachStore.coach.user?.email || "Not provided"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label>
+                      Bio
+                    </Label>
+                    <p className="text-base">
+                      {coachStore.coach.bio || "No bio available"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label>
+                      Certification
+                    </Label>
+                    <p className="text-base">
+                      {coachStore.coach.certification || "Not specified"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label>
+                      Looking for Client
+                    </Label>
+                    <p className="text-base">
+                      {coachStore.coach.lookingForClient ? "Yes" : "No"}
+                    </p>
+                  </div>
+                  <Button onClick={handleEditClick} className="mt-4">
+                    Edit
+                  </Button>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Email
-                  </label>
-                  <p className="text-base">
-                    {coachStore.coach.user?.email || "Not provided"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Bio
-                  </label>
-                  <p className="text-base">
-                    {coachStore.coach.bio || "No bio available"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Certification
-                  </label>
-                  <p className="text-base">
-                    {coachStore.coach.certification || "Not specified"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Looking for Client
-                  </label>
-                  <p className="text-base">
-                    {coachStore.coach.lookingForClient ? "Yes" : "No"}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="text-muted-foreground">No coach data found</div>
-            )}
-          </div>
+              ) : (
+                <div className="text-muted-foreground">No coach data found</div>
+              )}
+            </CardContent>
+          </Card>
         )}
+
         {/* Admin-specific Card */}
         {user.role === "ADMIN" && (
-          <div className="bg-card rounded-lg border p-6 space-y-4">
-            <h2 className="text-xl font-semibold">Admin Information</h2>
-            <div className="space-y-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Admin Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
               <div>
-                <label className="text-sm font-medium text-muted-foreground">
+                <Label>
                   Access Level
-                </label>
+                </Label>
                 <p className="text-base">Full System Access</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">
+                <Label>
                   Permissions
-                </label>
+                </Label>
                 <p className="text-base">
                   Manage Users, Coaches, Clients, and System Settings
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">
+                <Label>
                   Last Login
-                </label>
+                </Label>
                 <p className="text-base">Today</p>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
+
+        {/* Edit Modal */}
         {isEditModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-card rounded-lg border p-6 w-full max-w-md mx-4 shadow-lg">
               <h3 className="text-xl font-semibold mb-4 text-foreground">
-                Edit Client Information
+                Edit {user.role === "CLIENT" ? "Client" : "Coach"} Information
               </h3>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">
+                  <Label htmlFor="name" className="mb-1">
                     Name
-                  </label>
-                  <input
+                  </Label>
+                  <Input
+                    id="name"
                     type="text"
                     value={editForm.name}
                     onChange={(e) =>
                       setEditForm({ ...editForm, name: e.target.value })
                     }
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground border-border"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">
+                  <Label htmlFor="email" className="mb-1">
                     Email (Read-only)
-                  </label>
-                  <input
+                  </Label>
+                  <Input
+                    id="email"
                     type="email"
-                    value={clientStore.client?.user?.email || ""}
-                    disabled
-                    className="w-full px-3 py-2 border rounded-md bg-muted text-muted-foreground border-border"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">
-                    Date of Birth
-                  </label>
-                  <input
-                    type="date"
-                    value={editForm.dateOfBirth}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, dateOfBirth: e.target.value })
+                    value={
+                      user.role === "CLIENT"
+                        ? clientStore.client?.user?.email || ""
+                        : coachStore.coach?.user?.email || ""
                     }
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground border-border"
+                    disabled
+                    className="bg-muted text-muted-foreground"
                   />
                 </div>
 
+                {user.role === "CLIENT" && (
+                  <div>
+                    <Label htmlFor="dateOfBirth" className="mb-1">
+                      Date of Birth
+                    </Label>
+                    <Input
+                      id="dateOfBirth"
+                      type="date"
+                      value={editForm.dateOfBirth}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          dateOfBirth: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                )}
+
                 <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">
+                  <Label htmlFor="bio" className="mb-1">
                     Bio
-                  </label>
-                  <textarea
+                  </Label>
+                  <Textarea
+                    id="bio"
                     value={editForm.bio}
                     onChange={(e) =>
                       setEditForm({ ...editForm, bio: e.target.value })
                     }
                     rows={3}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground border-border resize-none"
+                    className="resize-none"
                   />
                 </div>
 
-                <div className="flex items-center">
-                  <input
+                {user.role === "COACH" && (
+                  <div>
+                    <Label htmlFor="certification" className="mb-1">
+                      Certification
+                    </Label>
+                    <Input
+                      id="certification"
+                      type="text"
+                      value={editForm.certification}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          certification: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center space-x-2">
+                  <Input
                     type="checkbox"
-                    id="lookingForCoach"
-                    checked={editForm.lookingForCoach}
+                    id={
+                      user.role === "CLIENT"
+                        ? "lookingForCoach"
+                        : "lookingForClient"
+                    }
+                    checked={
+                      user.role === "CLIENT"
+                        ? editForm.lookingForCoach
+                        : editForm.lookingForClient
+                    }
                     onChange={(e) =>
                       setEditForm({
                         ...editForm,
-                        lookingForCoach: e.target.checked,
+                        [user.role === "CLIENT"
+                          ? "lookingForCoach"
+                          : "lookingForClient"]: e.target.checked,
                       })
                     }
-                    className="mr-2 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                   />
-                  <label
-                    htmlFor="lookingForCoach"
-                    className="text-sm font-medium text-foreground"
+                  <Label
+                    htmlFor={
+                      user.role === "CLIENT"
+                        ? "lookingForCoach"
+                        : "lookingForClient"
+                    }
+                    className="text-sm font-medium"
                   >
-                    Looking for Coach
-                  </label>
+                    Looking for {user.role === "CLIENT" ? "Coach" : "Client"}
+                  </Label>
                 </div>
               </div>
 
               <div className="flex gap-3 mt-6">
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => setIsEditModalOpen(false)}
                   disabled={isUpdating}
-                  className="flex-1 px-4 py-2 border border-border rounded-md hover:bg-muted transition-colors disabled:opacity-50 text-foreground"
+                  className="flex-1"
                 >
-                  Back
-                </button>
-                <button
+                  Cancel
+                </Button>
+                <Button
                   onClick={handleEditSubmit}
                   disabled={isUpdating}
-                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="flex-1"
                 >
-                  {isUpdating ? "Updating..." : "Confirm"}
-                </button>
+                  {isUpdating ? "Updating..." : "Save Changes"}
+                </Button>
               </div>
             </div>
           </div>
