@@ -20,6 +20,7 @@ import ClientExercisesPage from "./pages/exercises/ClientExercisesPage";
 import CoachExercisesPage from "./pages/exercises/CoachExercisesPage";
 import HomePage from "./pages/HomePage";
 import ProfilePage from "./pages/profile/ProfilePage";
+import ProgramsPage from "./pages/programs/ProgramsPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const user = useUserStore((s) => s.user);
@@ -127,6 +128,16 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/programs"
+        element={
+          <ProtectedRoute>
+            <RequireRole allow={["COACH", "ADMIN"]}>
+              <ProgramsPage />
+            </RequireRole>
           </ProtectedRoute>
         }
       />
