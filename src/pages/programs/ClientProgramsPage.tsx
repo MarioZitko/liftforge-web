@@ -7,6 +7,7 @@ import {
 } from "@/components/shared/DataTable/types";
 import { showError } from "@/components/shared/utils/toast.util";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -15,9 +16,11 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface MyProgramRow {
 	id: number;
+	programId: number;
 	name: string;
 	programName: string;
 	description: string;
@@ -42,6 +45,7 @@ function formatDate(iso: string) {
 }
 
 export default function ClientProgramsPage() {
+	const navigate = useNavigate();
 	const [rows, setRows] = useState<MyProgramRow[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -65,6 +69,7 @@ export default function ClientProgramsPage() {
 
 			const mapped: MyProgramRow[] = assignments.map((a) => ({
 				id: a.id,
+				programId: a.programId,
 				name: a.name,
 				programName: a.program?.name ?? "—",
 				description: a.program?.description ?? "",
@@ -128,6 +133,19 @@ export default function ClientProgramsPage() {
 				<Badge variant={statusBadgeVariant(row.status)}>
 					{row.status.charAt(0).toUpperCase() + row.status.slice(1)}
 				</Badge>
+			),
+		},
+		{
+			key: "id",
+			label: "",
+			render: (row) => (
+				<Button
+					size="sm"
+					variant="default"
+					onClick={() => navigate(`/my-programs/${row.programId}`)}
+				>
+					View
+				</Button>
 			),
 		},
 	];

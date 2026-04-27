@@ -4,6 +4,7 @@ import ClientsApiClient from "@/api/client/client.api";
 import { Client } from "@/api/client/client.types";
 import ProgramsApiClient from "@/api/programs/programs.api";
 import { Program } from "@/api/programs/programs.types";
+import { useNavigate } from "react-router-dom";
 import { ServerTable } from "@/components/shared/DataTable/ServerTable";
 import {
 	Column,
@@ -94,6 +95,7 @@ function todayIso() {
 export default function CoachProgramsPage() {
 	const user = useUserStore((s) => s.user);
 	const { coach, fetchCoach } = useCoachStore();
+	const navigate = useNavigate();
 
 	const [programs, setPrograms] = useState<Program[]>([]);
 	const [assignments, setAssignments] = useState<ClientProgramAssignment[]>([]);
@@ -378,13 +380,20 @@ export default function CoachProgramsPage() {
 			key: "id",
 			label: "Actions",
 			render: (row) => (
-				<div className="flex gap-2">
+				<div className="flex gap-2 flex-wrap">
+					<Button
+						size="sm"
+						variant="default"
+						onClick={() => navigate(`/programs/${row.id}`)}
+					>
+						View
+					</Button>
 					<Button size="sm" variant="outline" onClick={() => openEditProgram(row)}>
 						Edit
 					</Button>
 					<Button
 						size="sm"
-						variant={row.assignment ? "secondary" : "default"}
+						variant={row.assignment ? "secondary" : "outline"}
 						onClick={() => openAssign(row)}
 					>
 						{row.assignment ? "Edit Assignment" : "Assign"}

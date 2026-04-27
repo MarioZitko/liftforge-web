@@ -22,6 +22,10 @@ import HomePage from "./pages/HomePage";
 import ProfilePage from "./pages/profile/ProfilePage";
 import CoachProgramsPage from "./pages/programs/CoachProgramsPage";
 import ClientProgramsPage from "./pages/programs/ClientProgramsPage";
+import ProgramDetailPage from "./pages/programs/ProgramDetailPage";
+import TrainingDetailPage from "./pages/programs/TrainingDetailPage";
+import ClientProgramDetailPage from "./pages/programs/ClientProgramDetailPage";
+import ClientTrainingDetailPage from "./pages/programs/ClientTrainingDetailPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const user = useUserStore((s) => s.user);
@@ -115,11 +119,55 @@ export function AppRoutes() {
       />
 
       <Route
+        path="/programs/:programId"
+        element={
+          <ProtectedRoute>
+            <RequireRole allow={["COACH", "ADMIN"]}>
+              <ProgramDetailPage />
+            </RequireRole>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/programs/:programId/trainings/:trainingId"
+        element={
+          <ProtectedRoute>
+            <RequireRole allow={["COACH", "ADMIN"]}>
+              <TrainingDetailPage />
+            </RequireRole>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/my-programs"
         element={
           <ProtectedRoute>
             <RequireRole allow={["CLIENT", "ADMIN"]}>
               <ClientProgramsPage />
+            </RequireRole>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-programs/:programId"
+        element={
+          <ProtectedRoute>
+            <RequireRole allow={["CLIENT", "ADMIN"]}>
+              <ClientProgramDetailPage />
+            </RequireRole>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-programs/:programId/trainings/:trainingId"
+        element={
+          <ProtectedRoute>
+            <RequireRole allow={["CLIENT", "ADMIN"]}>
+              <ClientTrainingDetailPage />
             </RequireRole>
           </ProtectedRoute>
         }
