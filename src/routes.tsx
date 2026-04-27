@@ -20,6 +20,8 @@ import ClientExercisesPage from "./pages/exercises/ClientExercisesPage";
 import CoachExercisesPage from "./pages/exercises/CoachExercisesPage";
 import HomePage from "./pages/HomePage";
 import ProfilePage from "./pages/profile/ProfilePage";
+import CoachProgramsPage from "./pages/programs/CoachProgramsPage";
+import ClientProgramsPage from "./pages/programs/ClientProgramsPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const user = useUserStore((s) => s.user);
@@ -96,6 +98,28 @@ export function AppRoutes() {
           <ProtectedRoute>
             <RequireRole allow={["COACH", "ADMIN"]}>
               <ClientsLookingForCoachPage />
+            </RequireRole>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/programs"
+        element={
+          <ProtectedRoute>
+            <RequireRole allow={["COACH", "ADMIN"]}>
+              <CoachProgramsPage />
+            </RequireRole>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-programs"
+        element={
+          <ProtectedRoute>
+            <RequireRole allow={["CLIENT", "ADMIN"]}>
+              <ClientProgramsPage />
             </RequireRole>
           </ProtectedRoute>
         }
