@@ -22,6 +22,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { PageLoader } from "@/components/page/PageLoader";
+import { formatDateLong } from "@/lib/date";
+import { VideoLink } from "./components/VideoLink";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -127,13 +130,7 @@ export default function ClientTrainingDetailPage() {
 
 	// ── Render ────────────────────────────────────────────────────────────────
 
-	if (loading) {
-		return (
-			<div className="px-4 py-6 max-w-screen-xl mx-auto">
-				<p className="text-muted-foreground">Loading…</p>
-			</div>
-		);
-	}
+	if (loading) return <PageLoader />;
 
 	return (
 		<div className="space-y-6 px-4 py-6 max-w-screen-xl mx-auto">
@@ -150,12 +147,7 @@ export default function ClientTrainingDetailPage() {
 					<h1 className="text-2xl font-bold">{training?.name ?? "Session"}</h1>
 					{training?.date && (
 						<p className="text-sm text-muted-foreground">
-							{new Date(training.date).toLocaleDateString(undefined, {
-								weekday: "long",
-								year: "numeric",
-								month: "long",
-								day: "numeric",
-							})}
+							{formatDateLong(training.date)}
 						</p>
 					)}
 				</div>
@@ -211,12 +203,10 @@ export default function ClientTrainingDetailPage() {
 								</div>
 
 								{/* Logged values row */}
-								{(te.rpeActual != null ||
-									(te.note && te.note.trim()) ||
-									(te.videoUrl && te.videoUrl.trim())) && (
+								{hasLog(te) && (
 									<div className="flex flex-wrap gap-2 mt-1">
 										{te.rpeActual != null && (
-											<Badge className="text-xs bg-green-600 hover:bg-green-600">
+											<Badge className="text-xs bg-emerald-600 hover:bg-emerald-600">
 												Actual RPE {te.rpeActual}
 											</Badge>
 										)}
@@ -226,15 +216,7 @@ export default function ClientTrainingDetailPage() {
 											</span>
 										)}
 										{te.videoUrl && te.videoUrl.trim() && (
-											<a
-												href={te.videoUrl}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="text-xs text-blue-500 underline truncate max-w-[160px]"
-												onClick={(e) => e.stopPropagation()}
-											>
-												Video
-											</a>
+											<VideoLink href={te.videoUrl} className="text-xs" />
 										)}
 									</div>
 								)}

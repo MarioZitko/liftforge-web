@@ -50,6 +50,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useCoachStore } from "@/store/coachStore";
 import { useUserStore } from "@/store/userStore";
+import { statusBadgeVariant } from "@/lib/program-utils";
+import { todayIso } from "@/lib/date";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -82,15 +84,6 @@ const assignSchema = z.object({
 type ProgramFormValues = z.infer<typeof programSchema>;
 type AssignFormValues = z.infer<typeof assignSchema>;
 
-function statusBadgeVariant(status: string) {
-	if (status === "active") return "default";
-	if (status === "completed") return "secondary";
-	return "outline";
-}
-
-function todayIso() {
-	return new Date().toISOString().split("T")[0];
-}
 
 export default function CoachProgramsPage() {
 	const user = useUserStore((s) => s.user);
@@ -153,11 +146,8 @@ export default function CoachProgramsPage() {
 	async function fetchAll() {
 		setLoading(true);
 		try {
-			console.log('[Programs] current user.userId:', user?.userId);
 			const all = await ProgramsApiClient.getInstance().getAll();
-			console.log('[Programs] raw API response:', all.map(p => ({ id: p.id, name: p.name, createdById: p.createdById })));
 			const mine = all.filter((p) => p.createdById === user?.userId);
-			console.log('[Programs] filtered mine (matched createdById):', mine);
 			setPrograms(mine);
 		} catch (err) {
 			showError(err, "Failed to load programs.");

@@ -4,6 +4,7 @@ import { Training } from "@/api/training/training.types";
 import ProgramsApiClient from "@/api/programs/programs.api";
 import { Program } from "@/api/programs/programs.types";
 import { ProgramGrid } from "./components/ProgramGrid";
+import { ViewToggle } from "./components/ViewToggle";
 import { showError } from "@/components/shared/utils/toast.util";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,17 +19,12 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, Dumbbell, LayoutGrid, List } from "lucide-react";
+import { PageLoader } from "@/components/page/PageLoader";
+import { useToggleSet } from "@/hooks/useToggleSet";
+import { formatDate } from "@/lib/date";
+import { ChevronDown, ChevronRight, Dumbbell } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
-function formatDate(iso: string) {
-	return new Date(iso).toLocaleDateString(undefined, {
-		weekday: "short",
-		month: "short",
-		day: "numeric",
-	});
-}
 
 export default function ClientProgramDetailPage() {
 	const { programId } = useParams<{ programId: string }>();
@@ -38,9 +34,10 @@ export default function ClientProgramDetailPage() {
 	const [blocks, setBlocks] = useState<TrainingBlock[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [view, setView] = useState<"list" | "grid">("list");
-	const [openBlocks, setOpenBlocks] = useState<Set<number>>(new Set());
-	const [openWeeks, setOpenWeeks] = useState<Set<number>>(new Set());
-	const [openTrainings, setOpenTrainings] = useState<Set<number>>(new Set());
+
+	const { set: openBlocks, toggle: toggleBlock, init: initBlocks } = useToggleSet();
+	const { set: openWeeks, toggle: toggleWeek, init: initWeeks } = useToggleSet();
+	const { set: openTrainings, toggle: toggleTraining } = useToggleSet();
 
 	useEffect(() => {
 		if (programId) fetchAll(+programId);
@@ -56,8 +53,8 @@ export default function ClientProgramDetailPage() {
 			setProgram(prog);
 			setBlocks(blks);
 			// Auto-expand everything so the client sees the full structure immediately
-			setOpenBlocks(new Set(blks.map((b) => b.id)));
-			setOpenWeeks(new Set(blks.flatMap((b) => b.weeks.map((w) => w.id))));
+			initBlocks(blks.map((b) => b.id));
+			initWeeks(blks.flatMap((b) => b.weeks.map((w) => w.id)));
 		} catch (err) {
 			showError(err, "Failed to load program.");
 		} finally {
@@ -65,37 +62,7 @@ export default function ClientProgramDetailPage() {
 		}
 	}
 
-	function toggleBlock(id: number) {
-		setOpenBlocks((s) => {
-			const next = new Set(s);
-			next.has(id) ? next.delete(id) : next.add(id);
-			return next;
-		});
-	}
-
-	function toggleWeek(id: number) {
-		setOpenWeeks((s) => {
-			const next = new Set(s);
-			next.has(id) ? next.delete(id) : next.add(id);
-			return next;
-		});
-	}
-
-	function toggleTraining(id: number) {
-		setOpenTrainings((s) => {
-			const next = new Set(s);
-			next.has(id) ? next.delete(id) : next.add(id);
-			return next;
-		});
-	}
-
-	if (loading) {
-		return (
-			<div className="px-4 py-6 max-w-screen-xl mx-auto">
-				<p className="text-muted-foreground">Loading…</p>
-			</div>
-		);
-	}
+	if (loading) return <PageLoader />;
 
 	return (
 		<div className="space-y-6 px-4 py-6 max-w-screen-xl mx-auto">
@@ -114,30 +81,7 @@ export default function ClientProgramDetailPage() {
 
 			{/* View toggle */}
 			<div className="flex items-center justify-end">
-				<div className="flex items-center border rounded-md overflow-hidden">
-					<button
-						className={`flex items-center gap-1 px-3 py-1.5 text-sm transition-colors ${
-							view === "list"
-								? "bg-primary text-primary-foreground"
-								: "hover:bg-muted text-muted-foreground"
-						}`}
-						onClick={() => setView("list")}
-					>
-						<List className="w-3.5 h-3.5" />
-						List
-					</button>
-					<button
-						className={`flex items-center gap-1 px-3 py-1.5 text-sm transition-colors ${
-							view === "grid"
-								? "bg-primary text-primary-foreground"
-								: "hover:bg-muted text-muted-foreground"
-						}`}
-						onClick={() => setView("grid")}
-					>
-						<LayoutGrid className="w-3.5 h-3.5" />
-						Grid
-					</button>
-				</div>
+				<ViewToggle view={view} onViewChange={setView} />
 			</div>
 
 			{/* Grid view */}
@@ -213,9 +157,7 @@ export default function ClientProgramDetailPage() {
 															) : (
 																<ChevronRight className="w-3 h-3 shrink-0" />
 															)}
-															<span className="font-medium text-sm">
-																{week.name}
-															</span>
+															<span className="font-medium text-sm">{week.name}</span>
 															<Badge variant="secondary" className="text-xs">
 																Week {week.number}
 															</Badge>
@@ -264,9 +206,7 @@ export default function ClientProgramDetailPage() {
 																			variant="default"
 																			className="h-7 text-xs shrink-0"
 																			onClick={() =>
-																				navigate(
-																					`/my-programs/${programId}/trainings/${training.id}`
-																				)
+																				navigate(`/my-programs/${programId}/trainings/${training.id}`)
 																			}
 																		>
 																			Log →
