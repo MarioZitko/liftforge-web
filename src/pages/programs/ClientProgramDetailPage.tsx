@@ -3,6 +3,7 @@ import { TrainingBlock, TrainingWeekSummary } from "@/api/training-block/trainin
 import { Training } from "@/api/training/training.types";
 import ProgramsApiClient from "@/api/programs/programs.api";
 import { Program } from "@/api/programs/programs.types";
+import { ProgramGrid } from "./components/ProgramGrid";
 import { showError } from "@/components/shared/utils/toast.util";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, Dumbbell } from "lucide-react";
+import { ChevronDown, ChevronRight, Dumbbell, LayoutGrid, List } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -36,8 +37,10 @@ export default function ClientProgramDetailPage() {
 	const [program, setProgram] = useState<Program | null>(null);
 	const [blocks, setBlocks] = useState<TrainingBlock[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [view, setView] = useState<"list" | "grid">("list");
 	const [openBlocks, setOpenBlocks] = useState<Set<number>>(new Set());
 	const [openWeeks, setOpenWeeks] = useState<Set<number>>(new Set());
+	const [openTrainings, setOpenTrainings] = useState<Set<number>>(new Set());
 
 	useEffect(() => {
 		if (programId) fetchAll(+programId);
@@ -78,6 +81,14 @@ export default function ClientProgramDetailPage() {
 		});
 	}
 
+	function toggleTraining(id: number) {
+		setOpenTrainings((s) => {
+			const next = new Set(s);
+			next.has(id) ? next.delete(id) : next.add(id);
+			return next;
+		});
+	}
+
 	if (loading) {
 		return (
 			<div className="px-4 py-6 max-w-screen-xl mx-auto">
@@ -101,7 +112,47 @@ export default function ClientProgramDetailPage() {
 				</div>
 			</div>
 
-			{/* Blocks */}
+			{/* View toggle */}
+			<div className="flex items-center justify-end">
+				<div className="flex items-center border rounded-md overflow-hidden">
+					<button
+						className={`flex items-center gap-1 px-3 py-1.5 text-sm transition-colors ${
+							view === "list"
+								? "bg-primary text-primary-foreground"
+								: "hover:bg-muted text-muted-foreground"
+						}`}
+						onClick={() => setView("list")}
+					>
+						<List className="w-3.5 h-3.5" />
+						List
+					</button>
+					<button
+						className={`flex items-center gap-1 px-3 py-1.5 text-sm transition-colors ${
+							view === "grid"
+								? "bg-primary text-primary-foreground"
+								: "hover:bg-muted text-muted-foreground"
+						}`}
+						onClick={() => setView("grid")}
+					>
+						<LayoutGrid className="w-3.5 h-3.5" />
+						Grid
+					</button>
+				</div>
+			</div>
+
+			{/* Grid view */}
+			{view === "grid" && (
+				<ProgramGrid
+					blocks={blocks}
+					variant="client"
+					onSessionClick={(t) =>
+						navigate(`/my-programs/${programId}/trainings/${t.id}`)
+					}
+				/>
+			)}
+
+			{/* List view */}
+			{view === "list" && (
 			<div className="space-y-4">
 				{blocks.length === 0 && (
 					<p className="text-muted-foreground text-sm">
@@ -184,32 +235,70 @@ export default function ClientProgramDetailPage() {
 															</p>
 														)}
 														{week.trainings.map((training: Training) => (
-															<div
+															<Collapsible
 																key={training.id}
-																className="flex items-center justify-between bg-muted/30 rounded px-3 py-2"
+																open={openTrainings.has(training.id)}
+																onOpenChange={() => toggleTraining(training.id)}
 															>
-																<div className="flex items-center gap-2">
-																	<Dumbbell className="w-3 h-3 text-muted-foreground" />
-																	<span className="text-sm font-medium">
-																		{training.name}
-																	</span>
-																	<span className="text-xs text-muted-foreground">
-																		{formatDate(training.date)}
-																	</span>
+																<div className="bg-muted/30 rounded">
+																	<div className="flex items-center justify-between px-3 py-2">
+																		<CollapsibleTrigger asChild>
+																			<button className="flex items-center gap-2 text-left flex-1 hover:opacity-80">
+																				{openTrainings.has(training.id) ? (
+																					<ChevronDown className="w-3 h-3 shrink-0 text-muted-foreground" />
+																				) : (
+																					<ChevronRight className="w-3 h-3 shrink-0 text-muted-foreground" />
+																				)}
+																				<Dumbbell className="w-3 h-3 text-muted-foreground" />
+																				<span className="text-sm font-medium">{training.name}</span>
+																				<span className="text-xs text-muted-foreground">{formatDate(training.date)}</span>
+																				{(training.trainingExercises?.length ?? 0) > 0 && (
+																					<Badge variant="secondary" className="text-[10px] h-4 px-1">
+																						{training.trainingExercises!.length} ex
+																					</Badge>
+																				)}
+																			</button>
+																		</CollapsibleTrigger>
+																		<Button
+																			size="sm"
+																			variant="default"
+																			className="h-7 text-xs shrink-0"
+																			onClick={() =>
+																				navigate(
+																					`/my-programs/${programId}/trainings/${training.id}`
+																				)
+																			}
+																		>
+																			Log →
+																		</Button>
+																	</div>
+																	<CollapsibleContent>
+																		<div className="px-8 pb-3 space-y-1">
+																			{(training.trainingExercises?.length ?? 0) === 0 ? (
+																				<p className="text-xs text-muted-foreground italic">No exercises added yet.</p>
+																			) : (
+																				training.trainingExercises!.map((te) => (
+																					<div key={te.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs py-1 border-t border-border/40 first:border-t-0">
+																						<span className="font-medium">{te.exercise?.name ?? `#${te.exerciseId}`}</span>
+																						<span className="text-muted-foreground">
+																							{te.sets}×{te.reps} @ {te.weight} kg
+																						</span>
+																						{te.rpePlanned != null && (
+																							<Badge variant="outline" className="text-[10px] h-4 px-1">RPE {te.rpePlanned}</Badge>
+																						)}
+																						{te.rpeActual != null && (
+																							<Badge className="text-[10px] h-4 px-1 bg-emerald-600 hover:bg-emerald-600">Actual RPE {te.rpeActual}</Badge>
+																						)}
+																						{te.note && te.note.trim() && (
+																							<span className="text-muted-foreground italic truncate max-w-[160px]">{te.note}</span>
+																						)}
+																					</div>
+																				))
+																			)}
+																		</div>
+																	</CollapsibleContent>
 																</div>
-																<Button
-																	size="sm"
-																	variant="default"
-																	className="h-7 text-xs"
-																	onClick={() =>
-																		navigate(
-																			`/my-programs/${programId}/trainings/${training.id}`
-																		)
-																	}
-																>
-																	Log →
-																</Button>
-															</div>
+															</Collapsible>
 														))}
 													</div>
 												</CollapsibleContent>
@@ -222,6 +311,7 @@ export default function ClientProgramDetailPage() {
 					</Card>
 				))}
 			</div>
+			)}
 		</div>
 	);
 }
