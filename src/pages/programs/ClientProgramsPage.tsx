@@ -6,6 +6,8 @@ import {
 	ServerQuery,
 } from "@/components/shared/DataTable/types";
 import { showError } from "@/components/shared/utils/toast.util";
+import { statusBadgeVariant } from "@/lib/program-utils";
+import { formatDateMedium } from "@/lib/date";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,20 +31,6 @@ interface MyProgramRow {
 	status: string;
 }
 
-function statusBadgeVariant(status: string) {
-	if (status === "active") return "default" as const;
-	if (status === "completed") return "secondary" as const;
-	return "outline" as const;
-}
-
-function formatDate(iso: string) {
-	if (!iso) return "—";
-	return new Date(iso).toLocaleDateString(undefined, {
-		year: "numeric",
-		month: "short",
-		day: "numeric",
-	});
-}
 
 export default function ClientProgramsPage() {
 	const navigate = useNavigate();
@@ -118,13 +106,13 @@ export default function ClientProgramsPage() {
 			key: "startDate",
 			label: "Start Date",
 			sortable: true,
-			render: (row) => formatDate(row.startDate),
+			render: (row) => formatDateMedium(row.startDate),
 		},
 		{
 			key: "endDate",
 			label: "End Date",
 			sortable: true,
-			render: (row) => formatDate(row.endDate),
+			render: (row) => formatDateMedium(row.endDate),
 		},
 		{
 			key: "status",

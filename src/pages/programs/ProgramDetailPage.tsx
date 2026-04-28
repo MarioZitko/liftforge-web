@@ -6,6 +6,7 @@ import TrainingWeekApiClient from "@/api/training-week/training-week.api";
 import ProgramsApiClient from "@/api/programs/programs.api";
 import { Program } from "@/api/programs/programs.types";
 import { ProgramGrid } from "./components/ProgramGrid";
+import { ViewToggle } from "./components/ViewToggle";
 import { showError, showSuccess } from "@/components/shared/utils/toast.util";
 import {
 	AlertDialog,
@@ -39,8 +40,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageLoader } from "@/components/page/PageLoader";
+import { useToggleSet } from "@/hooks/useToggleSet";
+import { formatDate, todayIso } from "@/lib/date";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, ChevronRight, Dumbbell, LayoutGrid, List, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Dumbbell, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -67,20 +71,6 @@ type BlockFormValues = z.infer<typeof blockSchema>;
 type WeekFormValues = z.infer<typeof weekSchema>;
 type TrainingFormValues = z.infer<typeof trainingSchema>;
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function todayIso() {
-	return new Date().toISOString().split("T")[0];
-}
-
-function formatDate(iso: string) {
-	return new Date(iso).toLocaleDateString(undefined, {
-		weekday: "short",
-		month: "short",
-		day: "numeric",
-	});
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ProgramDetailPage() {
@@ -90,11 +80,11 @@ export default function ProgramDetailPage() {
 	const [program, setProgram] = useState<Program | null>(null);
 	const [blocks, setBlocks] = useState<TrainingBlock[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [openBlocks, setOpenBlocks] = useState<Set<number>>(new Set());
-	const [openWeeks, setOpenWeeks] = useState<Set<number>>(new Set());
-	const [openTrainings, setOpenTrainings] = useState<Set<number>>(new Set());
-
 	const [view, setView] = useState<"list" | "grid">("list");
+
+	const { set: openBlocks, toggle: toggleBlock, add: addBlock } = useToggleSet();
+	const { set: openWeeks, toggle: toggleWeek, add: addWeek } = useToggleSet();
+	const { set: openTrainings, toggle: toggleTraining } = useToggleSet();
 
 	// Block dialog
 	const [blockDialogOpen, setBlockDialogOpen] = useState(false);
@@ -172,7 +162,7 @@ export default function ProgramDetailPage() {
 					...values,
 					programId: +programId!,
 				});
-				setOpenBlocks((s) => new Set(s).add(created.id));
+				addBlock(created.id);
 				showSuccess("Block created.");
 			}
 			setBlockDialogOpen(false);
@@ -223,7 +213,7 @@ export default function ProgramDetailPage() {
 					...values,
 					blockId: weekBlockId!,
 				});
-				setOpenWeeks((s) => new Set(s).add(created.id));
+				addWeek(created.id);
 				showSuccess("Week created.");
 			}
 			setWeekDialogOpen(false);
@@ -301,41 +291,9 @@ export default function ProgramDetailPage() {
 		}
 	}
 
-	// ── Collapse helpers ──────────────────────────────────────────────────────
-
-	function toggleBlock(id: number) {
-		setOpenBlocks((s) => {
-			const next = new Set(s);
-			next.has(id) ? next.delete(id) : next.add(id);
-			return next;
-		});
-	}
-
-	function toggleWeek(id: number) {
-		setOpenWeeks((s) => {
-			const next = new Set(s);
-			next.has(id) ? next.delete(id) : next.add(id);
-			return next;
-		});
-	}
-
-	function toggleTraining(id: number) {
-		setOpenTrainings((s) => {
-			const next = new Set(s);
-			next.has(id) ? next.delete(id) : next.add(id);
-			return next;
-		});
-	}
-
 	// ── Render ────────────────────────────────────────────────────────────────
 
-	if (loading) {
-		return (
-			<div className="px-4 py-6 max-w-screen-xl mx-auto">
-				<p className="text-muted-foreground">Loading…</p>
-			</div>
-		);
-	}
+	if (loading) return <PageLoader />;
 
 	return (
 		<div className="space-y-6 px-4 py-6 max-w-screen-xl mx-auto">
@@ -356,31 +314,7 @@ export default function ProgramDetailPage() {
 			<div className="flex items-center justify-between gap-4">
 				<h2 className="text-lg font-semibold">Training Blocks</h2>
 				<div className="flex items-center gap-2">
-					{/* View toggle */}
-					<div className="flex items-center border rounded-md overflow-hidden">
-						<button
-							className={`flex items-center gap-1 px-3 py-1.5 text-sm transition-colors ${
-								view === "list"
-									? "bg-primary text-primary-foreground"
-									: "hover:bg-muted text-muted-foreground"
-							}`}
-							onClick={() => setView("list")}
-						>
-							<List className="w-3.5 h-3.5" />
-							List
-						</button>
-						<button
-							className={`flex items-center gap-1 px-3 py-1.5 text-sm transition-colors ${
-								view === "grid"
-									? "bg-primary text-primary-foreground"
-									: "hover:bg-muted text-muted-foreground"
-							}`}
-							onClick={() => setView("grid")}
-						>
-							<LayoutGrid className="w-3.5 h-3.5" />
-							Grid
-						</button>
-					</div>
+					<ViewToggle view={view} onViewChange={setView} />
 					<Button size="sm" onClick={openCreateBlock}>
 						<Plus className="w-4 h-4 mr-1" />
 						Add Block
@@ -437,26 +371,14 @@ export default function ProgramDetailPage() {
 										<Badge variant="outline" className="text-xs">
 											{block.weeks.length} week{block.weeks.length !== 1 ? "s" : ""}
 										</Badge>
-										<Button
-											size="sm"
-											variant="outline"
-											onClick={() => openEditBlock(block)}
-										>
+										<Button size="sm" variant="outline" onClick={() => openEditBlock(block)}>
 											Edit
 										</Button>
-										<Button
-											size="sm"
-											variant="outline"
-											onClick={() => openCreateWeek(block.id)}
-										>
+										<Button size="sm" variant="outline" onClick={() => openCreateWeek(block.id)}>
 											<Plus className="w-3 h-3 mr-1" />
 											Week
 										</Button>
-										<Button
-											size="sm"
-											variant="destructive"
-											onClick={() => setDeleteBlockTarget(block)}
-										>
+										<Button size="sm" variant="destructive" onClick={() => setDeleteBlockTarget(block)}>
 											Delete
 										</Button>
 									</div>
@@ -485,9 +407,7 @@ export default function ProgramDetailPage() {
 															) : (
 																<ChevronRight className="w-3 h-3 shrink-0" />
 															)}
-															<span className="font-medium text-sm">
-																{week.name}
-															</span>
+															<span className="font-medium text-sm">{week.name}</span>
 															<Badge variant="secondary" className="text-xs">
 																Week {week.number}
 															</Badge>
@@ -498,20 +418,10 @@ export default function ProgramDetailPage() {
 														</button>
 													</CollapsibleTrigger>
 													<div className="flex gap-2 shrink-0">
-														<Button
-															size="sm"
-															variant="ghost"
-															className="h-7 text-xs"
-															onClick={() => openEditWeek(week, block.id)}
-														>
+														<Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => openEditWeek(week, block.id)}>
 															Edit
 														</Button>
-														<Button
-															size="sm"
-															variant="ghost"
-															className="h-7 text-xs"
-															onClick={() => openCreateTraining(week.id)}
-														>
+														<Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => openCreateTraining(week.id)}>
 															<Plus className="w-3 h-3 mr-1" />
 															Session
 														</Button>
@@ -519,9 +429,7 @@ export default function ProgramDetailPage() {
 															size="sm"
 															variant="ghost"
 															className="h-7 text-xs text-destructive hover:text-destructive"
-															onClick={() =>
-																setDeleteWeekTarget({ week, blockId: block.id })
-															}
+															onClick={() => setDeleteWeekTarget({ week, blockId: block.id })}
 														>
 															Delete
 														</Button>
@@ -610,17 +518,12 @@ export default function ProgramDetailPage() {
 							{editingBlock ? "Edit Block" : "New Training Block"}
 						</DialogTitle>
 					</DialogHeader>
-					<form
-						onSubmit={blockForm.handleSubmit(handleSaveBlock)}
-						className="space-y-4 py-2"
-					>
+					<form onSubmit={blockForm.handleSubmit(handleSaveBlock)} className="space-y-4 py-2">
 						<div className="space-y-1">
 							<Label>Name</Label>
 							<Input placeholder="e.g. Strength Foundation" {...blockForm.register("name")} />
 							{blockForm.formState.errors.name && (
-								<p className="text-sm text-red-500">
-									{blockForm.formState.errors.name.message}
-								</p>
+								<p className="text-sm text-red-500">{blockForm.formState.errors.name.message}</p>
 							)}
 						</div>
 						<div className="space-y-1">
@@ -628,9 +531,7 @@ export default function ProgramDetailPage() {
 							<Input placeholder="Optional" {...blockForm.register("description")} />
 						</div>
 						<DialogFooter>
-							<Button variant="outline" type="button" onClick={() => setBlockDialogOpen(false)}>
-								Cancel
-							</Button>
+							<Button variant="outline" type="button" onClick={() => setBlockDialogOpen(false)}>Cancel</Button>
 							<Button type="submit" disabled={blockForm.formState.isSubmitting}>
 								{blockForm.formState.isSubmitting ? "Saving…" : editingBlock ? "Save" : "Create"}
 							</Button>
@@ -645,32 +546,23 @@ export default function ProgramDetailPage() {
 					<DialogHeader>
 						<DialogTitle>{editingWeek ? "Edit Week" : "New Week"}</DialogTitle>
 					</DialogHeader>
-					<form
-						onSubmit={weekForm.handleSubmit(handleSaveWeek)}
-						className="space-y-4 py-2"
-					>
+					<form onSubmit={weekForm.handleSubmit(handleSaveWeek)} className="space-y-4 py-2">
 						<div className="space-y-1">
 							<Label>Name</Label>
 							<Input placeholder="e.g. Week 1" {...weekForm.register("name")} />
 							{weekForm.formState.errors.name && (
-								<p className="text-sm text-red-500">
-									{weekForm.formState.errors.name.message}
-								</p>
+								<p className="text-sm text-red-500">{weekForm.formState.errors.name.message}</p>
 							)}
 						</div>
 						<div className="space-y-1">
 							<Label>Week Number</Label>
 							<Input type="number" min={1} {...weekForm.register("number")} />
 							{weekForm.formState.errors.number && (
-								<p className="text-sm text-red-500">
-									{weekForm.formState.errors.number.message}
-								</p>
+								<p className="text-sm text-red-500">{weekForm.formState.errors.number.message}</p>
 							)}
 						</div>
 						<DialogFooter>
-							<Button variant="outline" type="button" onClick={() => setWeekDialogOpen(false)}>
-								Cancel
-							</Button>
+							<Button variant="outline" type="button" onClick={() => setWeekDialogOpen(false)}>Cancel</Button>
 							<Button type="submit" disabled={weekForm.formState.isSubmitting}>
 								{weekForm.formState.isSubmitting ? "Saving…" : editingWeek ? "Save" : "Create"}
 							</Button>
@@ -683,42 +575,27 @@ export default function ProgramDetailPage() {
 			<Dialog open={trainingDialogOpen} onOpenChange={setTrainingDialogOpen}>
 				<DialogContent className="sm:max-w-[440px]">
 					<DialogHeader>
-						<DialogTitle>
-							{editingTraining ? "Edit Session" : "New Session"}
-						</DialogTitle>
+						<DialogTitle>{editingTraining ? "Edit Session" : "New Session"}</DialogTitle>
 					</DialogHeader>
-					<form
-						onSubmit={trainingForm.handleSubmit(handleSaveTraining)}
-						className="space-y-4 py-2"
-					>
+					<form onSubmit={trainingForm.handleSubmit(handleSaveTraining)} className="space-y-4 py-2">
 						<div className="space-y-1">
 							<Label>Name</Label>
 							<Input placeholder="e.g. Upper Body A" {...trainingForm.register("name")} />
 							{trainingForm.formState.errors.name && (
-								<p className="text-sm text-red-500">
-									{trainingForm.formState.errors.name.message}
-								</p>
+								<p className="text-sm text-red-500">{trainingForm.formState.errors.name.message}</p>
 							)}
 						</div>
 						<div className="space-y-1">
 							<Label>Date</Label>
 							<Input type="date" {...trainingForm.register("date")} />
 							{trainingForm.formState.errors.date && (
-								<p className="text-sm text-red-500">
-									{trainingForm.formState.errors.date.message}
-								</p>
+								<p className="text-sm text-red-500">{trainingForm.formState.errors.date.message}</p>
 							)}
 						</div>
 						<DialogFooter>
-							<Button variant="outline" type="button" onClick={() => setTrainingDialogOpen(false)}>
-								Cancel
-							</Button>
+							<Button variant="outline" type="button" onClick={() => setTrainingDialogOpen(false)}>Cancel</Button>
 							<Button type="submit" disabled={trainingForm.formState.isSubmitting}>
-								{trainingForm.formState.isSubmitting
-									? "Saving…"
-									: editingTraining
-									? "Save"
-									: "Create"}
+								{trainingForm.formState.isSubmitting ? "Saving…" : editingTraining ? "Save" : "Create"}
 							</Button>
 						</DialogFooter>
 					</form>
@@ -726,16 +603,12 @@ export default function ProgramDetailPage() {
 			</Dialog>
 
 			{/* ── Delete Block ──────────────────────────────────────────────────── */}
-			<AlertDialog
-				open={!!deleteBlockTarget}
-				onOpenChange={(o) => !o && setDeleteBlockTarget(null)}
-			>
+			<AlertDialog open={!!deleteBlockTarget} onOpenChange={(o) => !o && setDeleteBlockTarget(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete block?</AlertDialogTitle>
 						<AlertDialogDescription>
-							This will permanently delete <strong>{deleteBlockTarget?.name}</strong>{" "}
-							and all its weeks and sessions.
+							This will permanently delete <strong>{deleteBlockTarget?.name}</strong> and all its weeks and sessions.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -746,16 +619,12 @@ export default function ProgramDetailPage() {
 			</AlertDialog>
 
 			{/* ── Delete Week ───────────────────────────────────────────────────── */}
-			<AlertDialog
-				open={!!deleteWeekTarget}
-				onOpenChange={(o) => !o && setDeleteWeekTarget(null)}
-			>
+			<AlertDialog open={!!deleteWeekTarget} onOpenChange={(o) => !o && setDeleteWeekTarget(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete week?</AlertDialogTitle>
 						<AlertDialogDescription>
-							This will permanently delete{" "}
-							<strong>{deleteWeekTarget?.week.name}</strong> and all its sessions.
+							This will permanently delete <strong>{deleteWeekTarget?.week.name}</strong> and all its sessions.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -766,16 +635,12 @@ export default function ProgramDetailPage() {
 			</AlertDialog>
 
 			{/* ── Delete Training ───────────────────────────────────────────────── */}
-			<AlertDialog
-				open={!!deleteTrainingTarget}
-				onOpenChange={(o) => !o && setDeleteTrainingTarget(null)}
-			>
+			<AlertDialog open={!!deleteTrainingTarget} onOpenChange={(o) => !o && setDeleteTrainingTarget(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete session?</AlertDialogTitle>
 						<AlertDialogDescription>
-							This will permanently delete{" "}
-							<strong>{deleteTrainingTarget?.name}</strong> and all its exercises.
+							This will permanently delete <strong>{deleteTrainingTarget?.name}</strong> and all its exercises.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
