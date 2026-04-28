@@ -15,7 +15,6 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -46,6 +45,7 @@ import {
 	DndContext,
 	DragEndEvent,
 	MouseSensor,
+	TouchSensor,
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
@@ -53,12 +53,13 @@ import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import {
 	arrayMove,
 	SortableContext,
-	useSortable,
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { PageLoader } from "@/components/page/PageLoader";
+import { formatDateLong } from "@/lib/date";
+import { SortableExerciseRow } from "./components/SortableExerciseRow";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { GripVertical, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -78,87 +79,6 @@ const exerciseSchema = z.object({
 });
 
 type ExerciseFormValues = z.infer<typeof exerciseSchema>;
-
-// ── Sortable row ──────────────────────────────────────────────────────────────
-
-interface SortableExerciseRowProps {
-	te: TrainingExercise;
-	onEdit: (te: TrainingExercise) => void;
-	onDelete: (te: TrainingExercise) => void;
-}
-
-function SortableExerciseRow({ te, onEdit, onDelete }: SortableExerciseRowProps) {
-	const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-		useSortable({ id: te.id });
-
-	const style = {
-		transform: CSS.Transform.toString(transform),
-		transition,
-		opacity: isDragging ? 0.5 : 1,
-	};
-
-	return (
-		<div
-			ref={setNodeRef}
-			style={style}
-			className="flex items-start gap-3 rounded-lg border bg-card px-4 py-3"
-		>
-			{/* Drag handle */}
-			<button
-				{...attributes}
-				{...listeners}
-				className="mt-1 cursor-grab text-muted-foreground hover:text-foreground"
-				type="button"
-			>
-				<GripVertical className="w-4 h-4" />
-			</button>
-
-			{/* Exercise info */}
-			<div className="flex-1 min-w-0">
-				<p className="font-medium text-sm truncate">
-					{te.exercise?.name ?? `Exercise #${te.exerciseId}`}
-				</p>
-				<div className="flex flex-wrap gap-2 mt-1">
-					<Badge variant="secondary" className="text-xs">
-						{te.sets} × {te.reps} @ {te.weight} kg
-					</Badge>
-					{te.rpePlanned != null && (
-						<Badge variant="outline" className="text-xs">
-							RPE {te.rpePlanned}
-						</Badge>
-					)}
-					{te.rpeActual != null && (
-						<Badge variant="outline" className="text-xs">
-							Actual RPE {te.rpeActual}
-						</Badge>
-					)}
-					{te.volume && (
-						<Badge variant="outline" className="text-xs text-muted-foreground">
-							Vol: {te.volume.volumeTotal.toFixed(0)} kg
-						</Badge>
-					)}
-				</div>
-				{te.note && (
-					<p className="text-xs text-muted-foreground mt-1 truncate">{te.note}</p>
-				)}
-			</div>
-
-			{/* Actions */}
-			<div className="flex gap-2 shrink-0">
-				<Button size="sm" variant="outline" onClick={() => onEdit(te)}>
-					Edit
-				</Button>
-				<Button
-					size="sm"
-					variant="destructive"
-					onClick={() => onDelete(te)}
-				>
-					Delete
-				</Button>
-			</div>
-		</div>
-	);
-}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -193,8 +113,10 @@ export default function TrainingDetailPage() {
 		},
 	});
 
-	const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
-	const sensors = useSensors(mouseSensor);
+	const sensors = useSensors(
+		useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+		useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+	);
 
 	useEffect(() => {
 		if (trainingId) fetchAll(+trainingId);
@@ -330,13 +252,7 @@ export default function TrainingDetailPage() {
 
 	// ── Render ────────────────────────────────────────────────────────────────
 
-	if (loading) {
-		return (
-			<div className="px-4 py-6 max-w-screen-xl mx-auto">
-				<p className="text-muted-foreground">Loading…</p>
-			</div>
-		);
-	}
+	if (loading) return <PageLoader />;
 
 	return (
 		<div className="space-y-6 px-4 py-6 max-w-screen-xl mx-auto">
@@ -353,12 +269,7 @@ export default function TrainingDetailPage() {
 					<h1 className="text-2xl font-bold">{training?.name ?? "Session"}</h1>
 					{training?.date && (
 						<p className="text-sm text-muted-foreground">
-							{new Date(training.date).toLocaleDateString(undefined, {
-								weekday: "long",
-								year: "numeric",
-								month: "long",
-								day: "numeric",
-							})}
+							{formatDateLong(training.date)}
 						</p>
 					)}
 				</div>
