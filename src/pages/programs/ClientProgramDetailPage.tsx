@@ -23,6 +23,7 @@ import { PageLoader } from "@/components/page/PageLoader";
 import { useToggleSet } from "@/hooks/useToggleSet";
 import { formatDate } from "@/lib/date";
 import { ChevronDown, ChevronRight, Dumbbell } from "lucide-react";
+import { useProgramView } from "@/hooks/useProgramView";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -33,7 +34,7 @@ export default function ClientProgramDetailPage() {
 	const [program, setProgram] = useState<Program | null>(null);
 	const [blocks, setBlocks] = useState<TrainingBlock[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [view, setView] = useState<"list" | "grid">("list");
+	const [view, setView] = useProgramView();
 
 	const { set: openBlocks, toggle: toggleBlock, init: initBlocks } = useToggleSet();
 	const { set: openWeeks, toggle: toggleWeek, init: initWeeks } = useToggleSet();
