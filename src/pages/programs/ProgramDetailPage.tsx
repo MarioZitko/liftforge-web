@@ -45,6 +45,7 @@ import { useToggleSet } from "@/hooks/useToggleSet";
 import { formatDate, todayIso } from "@/lib/date";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, ChevronRight, Dumbbell, Plus } from "lucide-react";
+import { useProgramView } from "@/hooks/useProgramView";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -80,7 +81,7 @@ export default function ProgramDetailPage() {
 	const [program, setProgram] = useState<Program | null>(null);
 	const [blocks, setBlocks] = useState<TrainingBlock[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [view, setView] = useState<"list" | "grid">("list");
+	const [view, setView] = useProgramView();
 
 	const { set: openBlocks, toggle: toggleBlock, add: addBlock } = useToggleSet();
 	const { set: openWeeks, toggle: toggleWeek, add: addWeek } = useToggleSet();
@@ -330,6 +331,16 @@ export default function ProgramDetailPage() {
 					onSessionClick={(t) =>
 						navigate(`/programs/${programId}/trainings/${t.id}`)
 					}
+					actions={{
+						onEditBlock: openEditBlock,
+						onDeleteBlock: setDeleteBlockTarget,
+						onAddWeek: openCreateWeek,
+						onEditWeek: openEditWeek,
+						onDeleteWeek: (week, blockId) => setDeleteWeekTarget({ week, blockId }),
+						onAddSession: openCreateTraining,
+						onEditSession: openEditTraining,
+						onDeleteSession: setDeleteTrainingTarget,
+					}}
 				/>
 			)}
 
