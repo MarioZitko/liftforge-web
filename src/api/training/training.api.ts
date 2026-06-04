@@ -2,7 +2,9 @@ import { ApiSuccessResponse } from "@/api/types";
 import BaseApi from "@/lib/base.api";
 import {
   CreateTrainingDto,
+  ScheduleProgramDto,
   Training,
+  TrainingCalendarItem,
   UpdateTrainingDto,
 } from "./training.types";
 
@@ -52,5 +54,32 @@ export default class TrainingApiClient extends BaseApi {
 
   public async delete(id: number): Promise<void> {
     await this.axiosInstance.delete(`/${id}`);
+  }
+
+  public async scheduleProgram(dto: ScheduleProgramDto): Promise<{ scheduledCount: number }> {
+    const res = await this.axiosInstance.post<
+      ApiSuccessResponse<{ scheduledCount: number }>
+    >("/schedule-program", dto);
+    return res.data.data;
+  }
+
+  public async getCalendar(
+    dateFrom: string,
+    dateTo: string
+  ): Promise<TrainingCalendarItem[]> {
+    const res = await this.axiosInstance.get<
+      ApiSuccessResponse<TrainingCalendarItem[]>
+    >(`/calendar?dateFrom=${dateFrom}&dateTo=${dateTo}`);
+    return res.data.data;
+  }
+
+  public async getMyCalendar(
+    dateFrom: string,
+    dateTo: string
+  ): Promise<TrainingCalendarItem[]> {
+    const res = await this.axiosInstance.get<
+      ApiSuccessResponse<TrainingCalendarItem[]>
+    >(`/my-calendar?dateFrom=${dateFrom}&dateTo=${dateTo}`);
+    return res.data.data;
   }
 }

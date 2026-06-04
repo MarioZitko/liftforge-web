@@ -1,5 +1,6 @@
 export const coachLinks = [
   { to: "/dashboard", label: "Dashboard" },
+  { to: "/calendar", label: "Calendar" },
   { to: "/clients", label: "Clients" },
   { to: "/programs", label: "Programs" },
   { to: "/coach/exercises", label: "Exercises" },
@@ -8,6 +9,7 @@ export const coachLinks = [
 
 export const clientLinks = [
   { to: "/dashboard", label: "My Dashboard" },
+  { to: "/my-calendar", label: "My Calendar" },
   { to: "/my-programs", label: "My Programs" },
   { to: "/client/exercises", label: "Exercise Library" },
   { to: "/profile", label: "My Profile" },

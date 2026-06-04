@@ -33,3 +33,20 @@ export interface UpdateTrainingDto {
   name?: string;
   date?: string;
 }
+
+export interface ScheduleProgramDto {
+  programId: number;
+  startDate: string;
+  trainingDays: number[];
+}
+
+export interface TrainingCalendarItem {
+  id: number;
+  name: string;
+  date: string;
+  weekId: number;
+  exerciseCount: number;
+  clientId: string;
+  clientName: string;
+  programId: number;
+}
