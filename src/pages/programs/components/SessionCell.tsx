@@ -1,14 +1,8 @@
 import { Training, TrainingExerciseSummary } from "@/api/training/training.types";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/date";
-import { CheckCircle2, ChevronDown, ChevronRight, MoreHorizontal } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronRight, Copy, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ExerciseRow } from "./ExerciseRow";
 
@@ -18,6 +12,8 @@ interface SessionCellProps {
   onSessionClick: (t: Training) => void;
   onEditSession?: (t: Training) => void;
   onDeleteSession?: (t: Training) => void;
+  onDuplicateSession?: (t: Training) => void;
+  forceExpanded?: boolean;
 }
 
 function isExerciseLogged(te: TrainingExerciseSummary) {
@@ -30,14 +26,19 @@ export function SessionCell({
   onSessionClick,
   onEditSession,
   onDeleteSession,
+  onDuplicateSession,
+  forceExpanded,
 }: SessionCellProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [localExpanded, setLocalExpanded] = useState(false);
+  const expanded = forceExpanded !== undefined ? forceExpanded : localExpanded;
+
   const exercises = session.trainingExercises ?? [];
   const loggedCount =
     variant === "client" ? exercises.filter(isExerciseLogged).length : 0;
   const allLogged = loggedCount > 0 && loggedCount === exercises.length;
 
-  const showActions = variant === "coach" && (onEditSession || onDeleteSession);
+  const showActions = variant === "coach" && (onEditSession || onDeleteSession || onDuplicateSession);
+  const iconBtnCls = "text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded";
 
   return (
     <div className="flex flex-col h-full">
@@ -46,7 +47,7 @@ export function SessionCell({
         <div className="flex items-center gap-1 min-w-0">
           {exercises.length > 0 && (
             <button
-              onClick={() => setExpanded((v) => !v)}
+              onClick={() => setLocalExpanded((v) => !v)}
               className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
               aria-label={expanded ? "Collapse exercises" : "Expand exercises"}
             >
@@ -81,33 +82,23 @@ export function SessionCell({
             {variant === "client" ? "Log →" : "View →"}
           </Button>
           {showActions && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                >
-                  <MoreHorizontal className="w-3 h-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-32">
-                {onEditSession && (
-                  <DropdownMenuItem onClick={() => onEditSession(session)}>
-                    Edit
-                  </DropdownMenuItem>
-                )}
-                {onEditSession && onDeleteSession && <DropdownMenuSeparator />}
-                {onDeleteSession && (
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => onDeleteSession(session)}
-                  >
-                    Delete
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-0.5 shrink-0">
+              {onEditSession && (
+                <button onClick={() => onEditSession(session)} className={iconBtnCls} title="Edit session">
+                  <Pencil className="w-3 h-3" />
+                </button>
+              )}
+              {onDuplicateSession && (
+                <button onClick={() => onDuplicateSession(session)} className={iconBtnCls} title="Duplicate session">
+                  <Copy className="w-3 h-3" />
+                </button>
+              )}
+              {onDeleteSession && (
+                <button onClick={() => onDeleteSession(session)} className={cn(iconBtnCls, "hover:text-red-400")} title="Delete session">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -115,7 +106,7 @@ export function SessionCell({
       {/* Collapsed: show exercise count as a hint */}
       {!expanded && exercises.length > 0 && (
         <button
-          onClick={() => setExpanded(true)}
+          onClick={() => setLocalExpanded(true)}
           className="text-[10px] text-muted-foreground hover:text-foreground transition-colors text-left"
         >
           {exercises.length} exercise{exercises.length !== 1 ? "s" : ""} — click to expand
@@ -124,7 +115,7 @@ export function SessionCell({
 
       {/* Expanded: full exercise list */}
       {expanded && (
-        <div className="flex-1">
+        <div className="flex-1 border-t border-border/50 mt-1 pt-1.5">
           {exercises.map((te) => (
             <ExerciseRow key={te.id} te={te} variant={variant} />
           ))}

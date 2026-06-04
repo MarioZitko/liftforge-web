@@ -405,40 +405,25 @@ export default function CoachProgramsPage() {
 	const assignedClientIds = new Set(assignments.map((a) => a.clientId));
 	const assignedClients = clients.filter((c) => assignedClientIds.has(c.id));
 
+	const clientFilterOptions = [
+		{ value: "all", label: "All programs" },
+		{ value: "unassigned", label: "Unassigned" },
+		...assignedClients.map((c) => ({
+			value: c.id,
+			label: c.user?.name ?? c.user?.email ?? c.id,
+		})),
+	];
+
 	return (
 		<div className="space-y-6 px-4 py-6 max-w-screen-xl mx-auto">
 			<h1 className="text-2xl font-bold">Programs</h1>
 
 			<Card>
 				<CardHeader>
-					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-						<div>
-							<CardTitle>All Programs</CardTitle>
-							<CardDescription>
-								Manage your programs and assign them to clients.
-							</CardDescription>
-						</div>
-						<Button onClick={openCreateProgram}>New Program</Button>
-					</div>
-
-					{/* Client filter */}
-					<div className="flex items-center gap-3 mt-4">
-						<Label className="shrink-0">Filter by client:</Label>
-						<Select value={filterClientId} onValueChange={setFilterClientId}>
-							<SelectTrigger className="w-56">
-								<SelectValue placeholder="All programs" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">All programs</SelectItem>
-								<SelectItem value="unassigned">Unassigned</SelectItem>
-								{assignedClients.map((c) => (
-									<SelectItem key={c.id} value={c.id}>
-										{c.user?.name ?? c.user?.email ?? c.id}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
+					<CardTitle>All Programs</CardTitle>
+					<CardDescription>
+						Manage your programs and assign them to clients.
+					</CardDescription>
 				</CardHeader>
 
 				<CardContent>
@@ -450,6 +435,14 @@ export default function CoachProgramsPage() {
 						query={query}
 						setQuery={setQuery}
 						getRowId={(row) => String(row.id)}
+						filters={[{
+							label: "Filter by client",
+							value: filterClientId,
+							onChange: setFilterClientId,
+							options: clientFilterOptions,
+						}]}
+						onCreate={openCreateProgram}
+						createLabel="New Program"
 					/>
 				</CardContent>
 			</Card>

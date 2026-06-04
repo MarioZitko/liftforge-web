@@ -3,6 +3,7 @@ import { TrainingBlock, TrainingWeekSummary } from "@/api/training-block/trainin
 import TrainingApiClient from "@/api/training/training.api";
 import { Training } from "@/api/training/training.types";
 import TrainingWeekApiClient from "@/api/training-week/training-week.api";
+import TrainingExerciseApiClient from "@/api/training-exercise/training-exercise.api";
 import ProgramsApiClient from "@/api/programs/programs.api";
 import { Program } from "@/api/programs/programs.types";
 import { ProgramGrid } from "./components/ProgramGrid";
@@ -44,7 +45,7 @@ import { PageLoader } from "@/components/page/PageLoader";
 import { useToggleSet } from "@/hooks/useToggleSet";
 import { formatDate, todayIso } from "@/lib/date";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, ChevronRight, Dumbbell, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, Dumbbell, Plus } from "lucide-react";
 import { useProgramView } from "@/hooks/useProgramView";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -60,12 +61,12 @@ const blockSchema = z.object({
 
 const weekSchema = z.object({
 	name: z.string().min(1, "Name is required"),
-	number: z.coerce.number().int().min(1, "Week number must be at least 1"),
+	number: z.coerce.number().int().min(1, "Position must be at least 1"),
 });
 
 const trainingSchema = z.object({
 	name: z.string().min(1, "Name is required"),
-	date: z.string().min(1, "Date is required"),
+	date: z.string().optional(),
 });
 
 type BlockFormValues = z.infer<typeof blockSchema>;
@@ -81,7 +82,9 @@ export default function ProgramDetailPage() {
 	const [program, setProgram] = useState<Program | null>(null);
 	const [blocks, setBlocks] = useState<TrainingBlock[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [isRefetching, setIsRefetching] = useState(false);
 	const [view, setView] = useProgramView();
+	const [expandAll, setExpandAll] = useState(false);
 
 	const { set: openBlocks, toggle: toggleBlock, add: addBlock } = useToggleSet();
 	const { set: openWeeks, toggle: toggleWeek, add: addWeek } = useToggleSet();
@@ -120,11 +123,15 @@ export default function ProgramDetailPage() {
 	});
 
 	useEffect(() => {
-		if (programId) fetchAll(+programId);
+		if (programId) fetchAll(+programId, true);
 	}, [programId]);
 
-	async function fetchAll(pid: number) {
-		setLoading(true);
+	async function fetchAll(pid: number, initial = false) {
+		if (initial) {
+			setLoading(true);
+		} else {
+			setIsRefetching(true);
+		}
 		try {
 			const [prog, blks] = await Promise.all([
 				ProgramsApiClient.getInstance().getById(pid),
@@ -135,7 +142,11 @@ export default function ProgramDetailPage() {
 		} catch (err) {
 			showError(err, "Failed to load program.");
 		} finally {
-			setLoading(false);
+			if (initial) {
+				setLoading(false);
+			} else {
+				setIsRefetching(false);
+			}
 		}
 	}
 
@@ -166,8 +177,8 @@ export default function ProgramDetailPage() {
 				addBlock(created.id);
 				showSuccess("Block created.");
 			}
+			await fetchAll(+programId!);
 			setBlockDialogOpen(false);
-			fetchAll(+programId!);
 		} catch (err) {
 			showError(err, "Failed to save block.");
 		}
@@ -178,7 +189,7 @@ export default function ProgramDetailPage() {
 		try {
 			await TrainingBlockApiClient.getInstance().delete(deleteBlockTarget.id);
 			showSuccess("Block deleted.");
-			fetchAll(+programId!);
+			await fetchAll(+programId!);
 		} catch (err) {
 			showError(err, "Failed to delete block.");
 		} finally {
@@ -217,8 +228,8 @@ export default function ProgramDetailPage() {
 				addWeek(created.id);
 				showSuccess("Week created.");
 			}
+			await fetchAll(+programId!);
 			setWeekDialogOpen(false);
-			fetchAll(+programId!);
 		} catch (err) {
 			showError(err, "Failed to save week.");
 		}
@@ -229,11 +240,55 @@ export default function ProgramDetailPage() {
 		try {
 			await TrainingWeekApiClient.getInstance().delete(deleteWeekTarget.week.id);
 			showSuccess("Week deleted.");
-			fetchAll(+programId!);
+			await fetchAll(+programId!);
 		} catch (err) {
 			showError(err, "Failed to delete week.");
 		} finally {
 			setDeleteWeekTarget(null);
+		}
+	}
+
+	async function handleDuplicateWeek(week: TrainingWeekSummary, blockId: number) {
+		try {
+			const block = blocks.find((b) => b.id === blockId);
+			const nextNumber = (block?.weeks.length ?? 0) + 1;
+
+			showSuccess("Duplicating week…");
+
+			const newWeek = await TrainingWeekApiClient.getInstance().create({
+				name: `${week.name} (copy)`,
+				number: nextNumber,
+				blockId,
+			});
+
+			for (const session of week.trainings) {
+				const newSession = await TrainingApiClient.getInstance().create({
+					name: session.name,
+					date: session.date,
+					weekId: newWeek.id,
+				});
+
+				for (const ex of session.trainingExercises ?? []) {
+					await TrainingExerciseApiClient.getInstance().create({
+						trainingId: newSession.id,
+						exerciseId: ex.exerciseId,
+						sortOrder: ex.sortOrder,
+						sets: ex.sets,
+						reps: ex.reps,
+						weight: ex.weight,
+						rpePlanned: ex.rpePlanned,
+						intensity: ex.intensity,
+						percentageOfMax: ex.percentageOfMax,
+						note: ex.note,
+						videoUrl: ex.videoUrl,
+					});
+				}
+			}
+
+			showSuccess("Week duplicated.");
+			await fetchAll(+programId!);
+		} catch (err) {
+			showError(err, "Failed to duplicate week.");
 		}
 	}
 
@@ -258,22 +313,26 @@ export default function ProgramDetailPage() {
 
 	async function handleSaveTraining(values: TrainingFormValues) {
 		try {
+			const dateIso = values.date
+				? new Date(values.date + "T00:00:00.000Z").toISOString()
+				: new Date().toISOString();
+
 			if (editingTraining) {
 				await TrainingApiClient.getInstance().update(editingTraining.id, {
 					name: values.name,
-					date: new Date(values.date + "T00:00:00.000Z").toISOString(),
+					date: dateIso,
 				});
 				showSuccess("Session updated.");
 			} else {
 				await TrainingApiClient.getInstance().create({
 					name: values.name,
-					date: new Date(values.date + "T00:00:00.000Z").toISOString(),
+					date: dateIso,
 					weekId: trainingWeekId!,
 				});
 				showSuccess("Session created.");
 			}
+			await fetchAll(+programId!);
 			setTrainingDialogOpen(false);
-			fetchAll(+programId!);
 		} catch (err) {
 			showError(err, "Failed to save session.");
 		}
@@ -284,11 +343,44 @@ export default function ProgramDetailPage() {
 		try {
 			await TrainingApiClient.getInstance().delete(deleteTrainingTarget.id);
 			showSuccess("Session deleted.");
-			fetchAll(+programId!);
+			await fetchAll(+programId!);
 		} catch (err) {
 			showError(err, "Failed to delete session.");
 		} finally {
 			setDeleteTrainingTarget(null);
+		}
+	}
+
+	async function handleDuplicateSession(session: Training) {
+		try {
+			showSuccess("Duplicating session…");
+
+			const newSession = await TrainingApiClient.getInstance().create({
+				name: `${session.name} (copy)`,
+				date: session.date,
+				weekId: session.weekId,
+			});
+
+			for (const ex of session.trainingExercises ?? []) {
+				await TrainingExerciseApiClient.getInstance().create({
+					trainingId: newSession.id,
+					exerciseId: ex.exerciseId,
+					sortOrder: ex.sortOrder,
+					sets: ex.sets,
+					reps: ex.reps,
+					weight: ex.weight,
+					rpePlanned: ex.rpePlanned,
+					intensity: ex.intensity,
+					percentageOfMax: ex.percentageOfMax,
+					note: ex.note,
+					videoUrl: ex.videoUrl,
+				});
+			}
+
+			showSuccess("Session duplicated.");
+			await fetchAll(+programId!);
+		} catch (err) {
+			showError(err, "Failed to duplicate session.");
 		}
 	}
 
@@ -298,6 +390,11 @@ export default function ProgramDetailPage() {
 
 	return (
 		<div className="space-y-6 px-4 py-6 max-w-screen-xl mx-auto">
+			{/* Refetch progress bar */}
+			{isRefetching && (
+				<div className="fixed top-0 left-0 right-0 z-50 h-0.5 bg-primary animate-pulse" />
+			)}
+
 			{/* Header */}
 			<div className="flex items-center gap-4">
 				<Button variant="ghost" size="sm" onClick={() => navigate("/programs")}>
@@ -315,6 +412,16 @@ export default function ProgramDetailPage() {
 			<div className="flex items-center justify-between gap-4">
 				<h2 className="text-lg font-semibold">Training Blocks</h2>
 				<div className="flex items-center gap-2">
+					{view === "grid" && (
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={() => setExpandAll((v) => !v)}
+							className="gap-1"
+						>
+							{expandAll ? "Collapse all" : "Expand all"}
+						</Button>
+					)}
 					<ViewToggle view={view} onViewChange={setView} />
 					<Button size="sm" onClick={openCreateBlock}>
 						<Plus className="w-4 h-4 mr-1" />
@@ -331,15 +438,18 @@ export default function ProgramDetailPage() {
 					onSessionClick={(t) =>
 						navigate(`/programs/${programId}/trainings/${t.id}`)
 					}
+					expandAll={expandAll}
 					actions={{
 						onEditBlock: openEditBlock,
 						onDeleteBlock: setDeleteBlockTarget,
 						onAddWeek: openCreateWeek,
 						onEditWeek: openEditWeek,
 						onDeleteWeek: (week, blockId) => setDeleteWeekTarget({ week, blockId }),
+						onDuplicateWeek: handleDuplicateWeek,
 						onAddSession: openCreateTraining,
 						onEditSession: openEditTraining,
 						onDeleteSession: setDeleteTrainingTarget,
+						onDuplicateSession: handleDuplicateSession,
 					}}
 				/>
 			)}
@@ -432,6 +542,10 @@ export default function ProgramDetailPage() {
 														<Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => openEditWeek(week, block.id)}>
 															Edit
 														</Button>
+														<Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => handleDuplicateWeek(week, block.id)}>
+															<Copy className="w-3 h-3 mr-1" />
+															Copy
+														</Button>
 														<Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => openCreateTraining(week.id)}>
 															<Plus className="w-3 h-3 mr-1" />
 															Session
@@ -481,6 +595,10 @@ export default function ProgramDetailPage() {
 																		</CollapsibleTrigger>
 																		<div className="flex gap-2 shrink-0">
 																			<Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => openEditTraining(training)}>Edit</Button>
+																			<Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => handleDuplicateSession(training)}>
+																				<Copy className="w-3 h-3 mr-1" />
+																				Copy
+																			</Button>
 																			<Button size="sm" variant="default" className="h-7 text-xs" onClick={() => navigate(`/programs/${programId}/trainings/${training.id}`)}>Exercises →</Button>
 																			<Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" onClick={() => setDeleteTrainingTarget(training)}>Delete</Button>
 																		</div>
@@ -522,7 +640,7 @@ export default function ProgramDetailPage() {
 			)}
 
 			{/* ── Block Dialog ──────────────────────────────────────────────────── */}
-			<Dialog open={blockDialogOpen} onOpenChange={setBlockDialogOpen}>
+			<Dialog open={blockDialogOpen} onOpenChange={(open) => { setBlockDialogOpen(open); if (!open) document.body.style.removeProperty('pointer-events'); }}>
 				<DialogContent className="sm:max-w-[440px]">
 					<DialogHeader>
 						<DialogTitle>
@@ -542,7 +660,7 @@ export default function ProgramDetailPage() {
 							<Input placeholder="Optional" {...blockForm.register("description")} />
 						</div>
 						<DialogFooter>
-							<Button variant="outline" type="button" onClick={() => setBlockDialogOpen(false)}>Cancel</Button>
+							<Button variant="outline" type="button" disabled={blockForm.formState.isSubmitting} onClick={() => setBlockDialogOpen(false)}>Cancel</Button>
 							<Button type="submit" disabled={blockForm.formState.isSubmitting}>
 								{blockForm.formState.isSubmitting ? "Saving…" : editingBlock ? "Save" : "Create"}
 							</Button>
@@ -552,7 +670,7 @@ export default function ProgramDetailPage() {
 			</Dialog>
 
 			{/* ── Week Dialog ───────────────────────────────────────────────────── */}
-			<Dialog open={weekDialogOpen} onOpenChange={setWeekDialogOpen}>
+			<Dialog open={weekDialogOpen} onOpenChange={(open) => { setWeekDialogOpen(open); if (!open) document.body.style.removeProperty('pointer-events'); }}>
 				<DialogContent className="sm:max-w-[440px]">
 					<DialogHeader>
 						<DialogTitle>{editingWeek ? "Edit Week" : "New Week"}</DialogTitle>
@@ -566,14 +684,15 @@ export default function ProgramDetailPage() {
 							)}
 						</div>
 						<div className="space-y-1">
-							<Label>Week Number</Label>
+							<Label>Order / Position</Label>
 							<Input type="number" min={1} {...weekForm.register("number")} />
+							<p className="text-xs text-muted-foreground">Used for sorting weeks within this block.</p>
 							{weekForm.formState.errors.number && (
 								<p className="text-sm text-red-500">{weekForm.formState.errors.number.message}</p>
 							)}
 						</div>
 						<DialogFooter>
-							<Button variant="outline" type="button" onClick={() => setWeekDialogOpen(false)}>Cancel</Button>
+							<Button variant="outline" type="button" disabled={weekForm.formState.isSubmitting} onClick={() => setWeekDialogOpen(false)}>Cancel</Button>
 							<Button type="submit" disabled={weekForm.formState.isSubmitting}>
 								{weekForm.formState.isSubmitting ? "Saving…" : editingWeek ? "Save" : "Create"}
 							</Button>
@@ -583,7 +702,7 @@ export default function ProgramDetailPage() {
 			</Dialog>
 
 			{/* ── Training Dialog ───────────────────────────────────────────────── */}
-			<Dialog open={trainingDialogOpen} onOpenChange={setTrainingDialogOpen}>
+			<Dialog open={trainingDialogOpen} onOpenChange={(open) => { setTrainingDialogOpen(open); if (!open) document.body.style.removeProperty('pointer-events'); }}>
 				<DialogContent className="sm:max-w-[440px]">
 					<DialogHeader>
 						<DialogTitle>{editingTraining ? "Edit Session" : "New Session"}</DialogTitle>
@@ -597,14 +716,12 @@ export default function ProgramDetailPage() {
 							)}
 						</div>
 						<div className="space-y-1">
-							<Label>Date</Label>
+							<Label>Date <span className="text-muted-foreground font-normal">(optional)</span></Label>
 							<Input type="date" {...trainingForm.register("date")} />
-							{trainingForm.formState.errors.date && (
-								<p className="text-sm text-red-500">{trainingForm.formState.errors.date.message}</p>
-							)}
+							<p className="text-xs text-muted-foreground">Leave empty to use today's date. Can be adjusted when assigning to a client.</p>
 						</div>
 						<DialogFooter>
-							<Button variant="outline" type="button" onClick={() => setTrainingDialogOpen(false)}>Cancel</Button>
+							<Button variant="outline" type="button" disabled={trainingForm.formState.isSubmitting} onClick={() => setTrainingDialogOpen(false)}>Cancel</Button>
 							<Button type="submit" disabled={trainingForm.formState.isSubmitting}>
 								{trainingForm.formState.isSubmitting ? "Saving…" : editingTraining ? "Save" : "Create"}
 							</Button>

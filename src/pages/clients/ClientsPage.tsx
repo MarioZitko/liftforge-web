@@ -14,10 +14,9 @@ import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
-	DialogFooter,
 } from "@/components/ui/dialog";
 import {
 	AlertDialog,
@@ -28,7 +27,6 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
-	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -272,57 +270,11 @@ export default function ClientsPage() {
 			<h1 className="text-2xl font-bold">Clients</h1>
 
 			<Card>
-				<CardHeader className="flex flex-col items-center">
-					<div className="text-center">
-						<CardTitle>All Clients</CardTitle>
-						<CardDescription>
-							View client activity, program status, and email verification.
-						</CardDescription>
-					</div>
-					<Dialog
-						open={showInviteClientDialog}
-						onOpenChange={setShowInviteClientDialog}
-					>
-						<DialogTrigger asChild>
-							<Button className="mt-4">Invite Client</Button>
-						</DialogTrigger>
-						<DialogContent className="sm:max-w-[425px]">
-							<DialogHeader>
-								<DialogTitle>Invite New Client</DialogTitle>
-								<DialogDescription>
-									Enter the email address of the client you want to invite.
-								</DialogDescription>
-							</DialogHeader>
-							<form
-								onSubmit={form.handleSubmit(handleInviteClient)}
-								className="grid gap-4 py-4"
-							>
-								<div className="grid grid-cols-4 items-center gap-4">
-									<Label htmlFor="email" className="text-right">
-										Email
-									</Label>
-									<Input
-										id="email"
-										placeholder="client@example.com"
-										className="col-span-3"
-										{...form.register("email")}
-									/>
-									{form.formState.errors.email && (
-										<p className="col-span-4 text-right text-sm text-red-500">
-											{form.formState.errors.email.message}
-										</p>
-									)}
-								</div>
-								<DialogFooter>
-									<Button type="submit" disabled={form.formState.isSubmitting}>
-										{form.formState.isSubmitting
-											? "Inviting..."
-											: "Send Invitation"}
-									</Button>
-								</DialogFooter>
-							</form>
-						</DialogContent>
-					</Dialog>
+				<CardHeader>
+					<CardTitle>All Clients</CardTitle>
+					<CardDescription>
+						View client activity, program status, and email verification.
+					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<ServerTable<ClientTableData>
@@ -333,9 +285,51 @@ export default function ClientsPage() {
 						query={query}
 						setQuery={setQuery}
 						getRowId={(row) => row.id}
+						onCreate={() => setShowInviteClientDialog(true)}
+						createLabel="Invite Client"
 					/>
 				</CardContent>
 			</Card>
+
+			<Dialog
+				open={showInviteClientDialog}
+				onOpenChange={setShowInviteClientDialog}
+			>
+				<DialogContent className="sm:max-w-[425px]">
+					<DialogHeader>
+						<DialogTitle>Invite New Client</DialogTitle>
+						<DialogDescription>
+							Enter the email address of the client you want to invite.
+						</DialogDescription>
+					</DialogHeader>
+					<form
+						onSubmit={form.handleSubmit(handleInviteClient)}
+						className="grid gap-4 py-4"
+					>
+						<div className="grid grid-cols-4 items-center gap-4">
+							<Label htmlFor="email" className="text-right">
+								Email
+							</Label>
+							<Input
+								id="email"
+								placeholder="client@example.com"
+								className="col-span-3"
+								{...form.register("email")}
+							/>
+							{form.formState.errors.email && (
+								<p className="col-span-4 text-right text-sm text-red-500">
+									{form.formState.errors.email.message}
+								</p>
+							)}
+						</div>
+						<DialogFooter>
+							<Button type="submit" disabled={form.formState.isSubmitting}>
+								{form.formState.isSubmitting ? "Inviting..." : "Send Invitation"}
+							</Button>
+						</DialogFooter>
+					</form>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

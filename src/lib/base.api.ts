@@ -29,9 +29,17 @@ export default class BaseApi {
 				const data = error.response?.data;
 
 				switch (status) {
-					case 401:
-						console.warn("Unauthorized. You may be logged out.");
+					case 401: {
+						const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/confirm-email"];
+						const onPublicPage = publicPaths.some((p) => window.location.pathname.startsWith(p));
+						if (!onPublicPage) {
+							import("@/store/userStore").then(({ useUserStore }) => {
+								useUserStore.getState().logout();
+							});
+							window.location.href = "/login";
+						}
 						break;
+					}
 					case 403:
 						console.warn("Forbidden. Insufficient permissions.");
 						break;

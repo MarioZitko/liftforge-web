@@ -1,15 +1,8 @@
 import { TrainingBlock, TrainingWeekSummary } from "@/api/training-block/training-block.types";
 import { Training } from "@/api/training/training.types";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/date";
-import { MoreHorizontal, Plus } from "lucide-react";
+import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
 import { SessionCell } from "./SessionCell";
 
 interface GridActions {
@@ -18,9 +11,11 @@ interface GridActions {
   onAddWeek: (blockId: number) => void;
   onEditWeek: (week: TrainingWeekSummary, blockId: number) => void;
   onDeleteWeek: (week: TrainingWeekSummary, blockId: number) => void;
+  onDuplicateWeek: (week: TrainingWeekSummary, blockId: number) => void;
   onAddSession: (weekId: number) => void;
   onEditSession: (t: Training) => void;
   onDeleteSession: (t: Training) => void;
+  onDuplicateSession: (t: Training) => void;
 }
 
 interface ProgramGridProps {
@@ -28,6 +23,7 @@ interface ProgramGridProps {
   variant: "coach" | "client";
   onSessionClick: (training: Training) => void;
   actions?: GridActions;
+  expandAll?: boolean;
 }
 
 function BlockGrid({
@@ -35,11 +31,13 @@ function BlockGrid({
   variant,
   onSessionClick,
   actions,
+  expandAll,
 }: {
   block: TrainingBlock;
   variant: "coach" | "client";
   onSessionClick: (t: Training) => void;
   actions?: GridActions;
+  expandAll?: boolean;
 }) {
   const weeks: TrainingWeekSummary[] = block.weeks;
   const maxSessions = Math.max(...weeks.map((w) => w.trainings.length), 0);
@@ -47,6 +45,8 @@ function BlockGrid({
   const headerCls = "bg-primary text-primary-foreground";
   const subHeaderCls = "bg-primary/90 text-primary-foreground";
   const headerBorderCls = "border-primary/30";
+  const iconBtnCls =
+    "text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-colors p-1 rounded";
 
   if (weeks.length === 0) {
     return (
@@ -54,7 +54,17 @@ function BlockGrid({
         <div className={cn(headerCls, "px-4 py-3 flex items-center gap-3")}>
           <h3 className="font-bold text-sm uppercase tracking-wide flex-1">{block.name}</h3>
           {actions && (
-            <BlockMenu block={block} actions={actions} />
+            <div className="flex items-center gap-0.5">
+              <button onClick={() => actions.onEditBlock(block)} className={iconBtnCls} title="Edit block">
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => actions.onAddWeek(block.id)} className={iconBtnCls} title="Add week">
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => actions.onDeleteBlock(block)} className={cn(iconBtnCls, "hover:text-red-300")} title="Delete block">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
           )}
         </div>
         <p className="text-sm text-muted-foreground p-4">No weeks added yet.</p>
@@ -73,7 +83,19 @@ function BlockGrid({
         <span className="ml-auto text-primary-foreground/60 text-xs">
           {weeks.length} week{weeks.length !== 1 ? "s" : ""}
         </span>
-        {actions && <BlockMenu block={block} actions={actions} />}
+        {actions && (
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button onClick={() => actions.onEditBlock(block)} className={iconBtnCls} title="Edit block">
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => actions.onAddWeek(block.id)} className={iconBtnCls} title="Add week">
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => actions.onDeleteBlock(block)} className={cn(iconBtnCls, "hover:text-red-300")} title="Delete block">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Scrollable grid */}
@@ -117,7 +139,31 @@ function BlockGrid({
                           {week.trainings.length !== 1 ? "s" : ""}
                         </div>
                       </div>
-                      {actions && <WeekMenu week={week} blockId={block.id} actions={actions} />}
+                      {actions && (
+                        <div className="flex items-center gap-0.5 shrink-0 mt-0.5">
+                          <button
+                            onClick={() => actions.onEditWeek(week, block.id)}
+                            className={iconBtnCls}
+                            title="Edit week"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => actions.onDuplicateWeek(week, block.id)}
+                            className={iconBtnCls}
+                            title="Duplicate week"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => actions.onDeleteWeek(week, block.id)}
+                            className={cn(iconBtnCls, "hover:text-red-300")}
+                            title="Delete week"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </th>
                 );
@@ -165,6 +211,8 @@ function BlockGrid({
                             onSessionClick={onSessionClick}
                             onEditSession={actions?.onEditSession}
                             onDeleteSession={actions?.onDeleteSession}
+                            onDuplicateSession={actions?.onDuplicateSession}
+                            forceExpanded={expandAll ? true : undefined}
                           />
                         ) : (
                           actions ? (
@@ -192,71 +240,7 @@ function BlockGrid({
   );
 }
 
-function BlockMenu({ block, actions }: { block: TrainingBlock; actions: GridActions }) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className="text-primary-foreground/70 hover:text-primary-foreground transition-colors p-0.5 rounded">
-          <MoreHorizontal className="w-4 h-4" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
-        <DropdownMenuItem onClick={() => actions.onEditBlock(block)}>
-          Edit block
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => actions.onAddWeek(block.id)}>
-          <Plus className="w-3 h-3 mr-1.5" />
-          Add week
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-destructive focus:text-destructive"
-          onClick={() => actions.onDeleteBlock(block)}
-        >
-          Delete block
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function WeekMenu({
-  week,
-  blockId,
-  actions,
-}: {
-  week: TrainingWeekSummary;
-  blockId: number;
-  actions: GridActions;
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className="text-primary-foreground/70 hover:text-primary-foreground transition-colors p-0.5 rounded shrink-0">
-          <MoreHorizontal className="w-3.5 h-3.5" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
-        <DropdownMenuItem onClick={() => actions.onEditWeek(week, blockId)}>
-          Edit week
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => actions.onAddSession(week.id)}>
-          <Plus className="w-3 h-3 mr-1.5" />
-          Add session
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-destructive focus:text-destructive"
-          onClick={() => actions.onDeleteWeek(week, blockId)}
-        >
-          Delete week
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-export function ProgramGrid({ blocks, variant, onSessionClick, actions }: ProgramGridProps) {
+export function ProgramGrid({ blocks, variant, onSessionClick, actions, expandAll }: ProgramGridProps) {
   if (blocks.length === 0) {
     return <p className="text-sm text-muted-foreground">No training blocks yet.</p>;
   }
@@ -270,6 +254,7 @@ export function ProgramGrid({ blocks, variant, onSessionClick, actions }: Progra
           variant={variant}
           onSessionClick={onSessionClick}
           actions={actions}
+          expandAll={expandAll}
         />
       ))}
     </div>

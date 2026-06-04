@@ -2,22 +2,60 @@ import ClientsApiClient from "@/api/client/client.api";
 import CoachesApiClient from "@/api/coach/coach.api";
 import UsersApiClient from "@/api/users/users.api";
 import { User } from "@/api/users/users.types";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { showError, showSuccess } from "@/components/shared/utils/toast.util";
+import { formatDate } from "@/lib/date";
 import { useClientStore } from "@/store/clientStore";
 import { useCoachStore } from "@/store/coachStore";
 import { useUserStore } from "@/store/userStore";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+
+function getInitials(name: string | null | undefined, email: string) {
+  if (name?.trim()) {
+    return name
+      .trim()
+      .split(" ")
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+  }
+  return email.slice(0, 2).toUpperCase();
+}
+
+function roleLabel(role: string) {
+  return role.charAt(0) + role.slice(1).toLowerCase();
+}
+
+function FactRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">
+        {label}
+      </dt>
+      <dd className="text-sm text-foreground">{value}</dd>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const user = useUserStore((s) => s.user);
   const coachStore = useCoachStore((s) => s);
   const clientStore = useClientStore((s) => s);
-  const navigate = useNavigate();
   const [userData, setUserData] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -31,15 +69,21 @@ export default function ProfilePage() {
     lookingForClient: false,
   });
 
+  const displayName =
+    (user?.role === "CLIENT"
+      ? clientStore.client?.user?.name
+      : coachStore.coach?.user?.name) ??
+    userData?.name ??
+    "";
+
   const handleEditClick = () => {
     if (user?.role === "CLIENT" && clientStore.client) {
-      // Format date properly for date input
       let formattedDate = "";
       if (clientStore.client.dateOfBirth) {
-        const date = new Date(clientStore.client.dateOfBirth);
-        formattedDate = date.toISOString().split("T")[0];
+        formattedDate = new Date(clientStore.client.dateOfBirth)
+          .toISOString()
+          .split("T")[0];
       }
-
       setEditForm({
         name: clientStore.client.user?.name || "",
         dateOfBirth: formattedDate,
@@ -64,26 +108,19 @@ export default function ProfilePage() {
 
   const handleEditSubmit = async () => {
     if (!user?.userId) return;
-
     setIsUpdating(true);
     try {
       const usersApi = UsersApiClient.getInstance();
-
-      // Update user name
       await usersApi.update(user.userId, { ...userData, name: editForm.name });
 
       if (user.role === "CLIENT" && clientStore.client) {
         const clientApi = ClientsApiClient.getInstance();
-
-        // Update client data
         await clientApi.update(clientStore.client.id, {
           dateOfBirth: new Date(editForm.dateOfBirth),
           bio: editForm.bio,
           lookingForCoach: editForm.lookingForCoach,
         });
-
-        // Update the store with new data
-        const updatedClient = {
+        clientStore.setClient({
           ...clientStore.client,
           dateOfBirth: editForm.dateOfBirth
             ? new Date(editForm.dateOfBirth)
@@ -96,20 +133,15 @@ export default function ProfilePage() {
             email: clientStore.client.user?.email || "",
             emailVerified: clientStore.client.user?.emailVerified ?? false,
           },
-        };
-        clientStore.setClient(updatedClient);
+        });
       } else if (user.role === "COACH" && coachStore.coach) {
         const coachApi = CoachesApiClient.getInstance();
-
-        // Update coach data
         await coachApi.update(coachStore.coach.id, {
           bio: editForm.bio,
           certification: editForm.certification,
           lookingForClient: editForm.lookingForClient,
         });
-
-        // Update the store with new data
-        const updatedCoach = {
+        coachStore.setCoach({
           ...coachStore.coach,
           bio: editForm.bio,
           certification: editForm.certification,
@@ -120,452 +152,293 @@ export default function ProfilePage() {
             email: coachStore.coach.user?.email || "",
             emailVerified: coachStore.coach.user?.emailVerified ?? false,
           },
-        };
-        coachStore.setCoach(updatedCoach);
+        });
       }
 
-      // Refresh userData
       const updatedUser = await usersApi.getMe();
       setUserData(updatedUser);
-
       setIsEditModalOpen(false);
+      showSuccess("Profile updated.");
     } catch (error) {
-      console.error("Error updating data:", error);
+      showError(error, "Failed to update profile.");
     } finally {
       setIsUpdating(false);
     }
   };
 
-  // Fetch role-specific data from API
   useEffect(() => {
     const fetchRoleData = async () => {
       if (!user?.userId) return;
-
       setIsLoading(true);
       try {
-        const usersApi = UsersApiClient.getInstance();
-        const fetchedUser = await usersApi.getMe();
+        const fetchedUser = await UsersApiClient.getInstance().getMe();
         setUserData(fetchedUser);
       } catch (error) {
-        console.error("Error fetching role data:", error);
+        showError(error, "Failed to load profile.");
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchRoleData();
   }, [user]);
 
   useEffect(() => {
     const fetchRoleSpecificData = async () => {
       if (!userData || !user) return;
-
       try {
         if (userData.role === "CLIENT") {
-          const clientApi = ClientsApiClient.getInstance();
-          let data = await clientApi.getByUserId(user.userId);
-          data = {
+          const data = await ClientsApiClient.getInstance().getByUserId(user.userId);
+          clientStore.setClient({
             ...data,
             user: {
               name: userData.name || "",
               email: userData.email || "",
               emailVerified: userData.emailVerified || false,
             },
-          };
-          clientStore.setClient(data);
+          });
         } else if (userData.role === "COACH") {
-          const coachApi = CoachesApiClient.getInstance();
-          let data = await coachApi.getByUserId(user.userId);
-          data = {
+          const data = await CoachesApiClient.getInstance().getByUserId(user.userId);
+          coachStore.setCoach({
             ...data,
             user: {
               name: userData.name || "",
               email: userData.email || "",
               emailVerified: userData.emailVerified || false,
             },
-          };
-          coachStore.setCoach(data);
+          });
         }
       } catch (error) {
-        console.error("Error fetching detailed data:", error);
+        showError(error, "Failed to load role data.");
       }
     };
-
     fetchRoleSpecificData();
   }, [userData, user]);
 
   if (!user) return null;
 
+  const canEdit = user.role === "CLIENT" || user.role === "COACH";
+
   return (
-    <div className="p-6 max-w-screen-xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">Profile</h1>
+    <div className="p-6 max-w-2xl mx-auto space-y-4">
+      {/* Hero card */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-5">
+            <Avatar className="size-16 text-lg font-bold shrink-0">
+              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
+                {getInitials(displayName, user.email)}
+              </AvatarFallback>
+            </Avatar>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Basic Information Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>User Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <Label >
-                E-mail
-              </Label>
-              <p className="text-base">{user.email}</p>
-            </div>
-
-            <div>
-              <Label>
-                Role
-              </Label>
-              <p className="text-base">{user.role}</p>
-            </div>
-            <div>
-              <Label>
-                User ID
-              </Label>
-              <p className="text-base">{user.userId}</p>
-            </div>
-            <div>
-              <Label>
-                Email Verified
-              </Label>
-              <p className="text-base">
-                {userData?.emailVerified ? "Yes" : "No"}
-              </p>
-              {userData?.emailVerified === false && (
-                <div className="space-y-2">
-                  <p className="text-sm text-red-500">
-                    Please verify your email to access all features.
-                  </p>
-                  <Button size="sm" onClick={() => navigate("/verify-email")}>
-                    Verify Email
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Client-specific Card */}
-        {user.role === "CLIENT" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Client Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="text-muted-foreground">Loading...</div>
-              ) : clientStore.client ? (
-                <div className="space-y-3">
-                  <div>
-                    <Label>
-                      Name
-                    </Label>
-                    <p className="text-base">
-                      {clientStore.client.user?.name || "Not provided"}
-                    </p>
-                  </div>
-                  <div>
-                    <Label>
-                      Email
-                    </Label>
-                    <p className="text-base">
-                      {clientStore.client.user?.email || "Not provided"}
-                    </p>
-                  </div>
-                  <div>
-                    <Label>
-                      Date of Birth
-                    </Label>
-                    <p className="text-base">
-                      {clientStore.client.dateOfBirth
-                        ? new Date(
-                            clientStore.client.dateOfBirth
-                          ).toLocaleDateString()
-                        : "Not provided"}
-                    </p>
-                  </div>
-                  <div>
-                    <Label>
-                      Bio
-                    </Label>
-                    <p className="text-base">
-                      {clientStore.client.bio || "No bio available"}
-                    </p>
-                  </div>
-                  <div>
-                    <Label>
-                      Assigned Coach
-                    </Label>
-                    <p className="text-base">
-                      {clientStore.client.coachId || "No coach assigned"}
-                    </p>
-                  </div>
-                  <div>
-                    <Label>
-                      Looking for Coach
-                    </Label>
-                    <p className="text-base">
-                      {clientStore.client.lookingForCoach ? "Yes" : "No"}
-                    </p>
-                  </div>
-                  <Button onClick={handleEditClick} className="mt-4">
-                    Edit
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-muted-foreground">
-                  No client data found
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Coach-specific Card */}
-        {user.role === "COACH" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Coach Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="text-muted-foreground">Loading...</div>
-              ) : coachStore.coach ? (
-                <div className="space-y-3">
-                  <div>
-                    <Label>
-                      Name
-                    </Label>
-                    <p className="text-base">
-                      {coachStore.coach.user?.name || "Not provided"}
-                    </p>
-                  </div>
-                  <div>
-                    <Label>
-                      Email
-                    </Label>
-                    <p className="text-base">
-                      {coachStore.coach.user?.email || "Not provided"}
-                    </p>
-                  </div>
-                  <div>
-                    <Label>
-                      Bio
-                    </Label>
-                    <p className="text-base">
-                      {coachStore.coach.bio || "No bio available"}
-                    </p>
-                  </div>
-                  <div>
-                    <Label>
-                      Certification
-                    </Label>
-                    <p className="text-base">
-                      {coachStore.coach.certification || "Not specified"}
-                    </p>
-                  </div>
-                  <div>
-                    <Label>
-                      Looking for Client
-                    </Label>
-                    <p className="text-base">
-                      {coachStore.coach.lookingForClient ? "Yes" : "No"}
-                    </p>
-                  </div>
-                  <Button onClick={handleEditClick} className="mt-4">
-                    Edit
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-muted-foreground">No coach data found</div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Admin-specific Card */}
-        {user.role === "ADMIN" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Admin Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label>
-                  Access Level
-                </Label>
-                <p className="text-base">Full System Access</p>
-              </div>
-              <div>
-                <Label>
-                  Permissions
-                </Label>
-                <p className="text-base">
-                  Manage Users, Coaches, Clients, and System Settings
-                </p>
-              </div>
-              <div>
-                <Label>
-                  Last Login
-                </Label>
-                <p className="text-base">Today</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Edit Modal */}
-        {isEditModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-card rounded-lg border p-6 w-full max-w-md mx-4 shadow-lg">
-              <h3 className="text-xl font-semibold mb-4 text-foreground">
-                Edit {user.role === "CLIENT" ? "Client" : "Coach"} Information
-              </h3>
-
-              <div className="space-y-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <Label htmlFor="name" className="mb-1">
-                    Name
-                  </Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={editForm.name}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, name: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="email" className="mb-1">
-                    Email (Read-only)
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={
-                      user.role === "CLIENT"
-                        ? clientStore.client?.user?.email || ""
-                        : coachStore.coach?.user?.email || ""
-                    }
-                    disabled
-                    className="bg-muted text-muted-foreground"
-                  />
-                </div>
-
-                {user.role === "CLIENT" && (
-                  <div>
-                    <Label htmlFor="dateOfBirth" className="mb-1">
-                      Date of Birth
-                    </Label>
-                    <Input
-                      id="dateOfBirth"
-                      type="date"
-                      value={editForm.dateOfBirth}
-                      onChange={(e) =>
-                        setEditForm({
-                          ...editForm,
-                          dateOfBirth: e.target.value,
-                        })
-                      }
-                    />
+                  <h2 className="text-xl font-bold leading-tight">
+                    {displayName || user.email}
+                  </h2>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="secondary">{roleLabel(user.role)}</Badge>
+                    {userData?.emailVerified === false && (
+                      <Badge variant="destructive" className="text-xs">Unverified</Badge>
+                    )}
                   </div>
+                </div>
+                {canEdit && (
+                  <Button variant="outline" size="sm" onClick={handleEditClick} className="shrink-0">
+                    Edit profile
+                  </Button>
                 )}
+              </div>
 
-                <div>
-                  <Label htmlFor="bio" className="mb-1">
-                    Bio
-                  </Label>
-                  <Textarea
-                    id="bio"
-                    value={editForm.bio}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, bio: e.target.value })
-                    }
-                    rows={3}
-                    className="resize-none"
-                  />
-                </div>
-
-                {user.role === "COACH" && (
-                  <div>
-                    <Label htmlFor="certification" className="mb-1">
-                      Certification
-                    </Label>
-                    <Input
-                      id="certification"
-                      type="text"
-                      value={editForm.certification}
-                      onChange={(e) =>
-                        setEditForm({
-                          ...editForm,
-                          certification: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
+              <dl className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+                <FactRow label="Email" value={user.email} />
+                {userData?.createdAt && (
+                  <FactRow label="Member since" value={formatDate(userData.createdAt)} />
                 )}
-
-                <div className="flex items-center space-x-2">
-                  <Input
-                    type="checkbox"
-                    id={
-                      user.role === "CLIENT"
-                        ? "lookingForCoach"
-                        : "lookingForClient"
-                    }
-                    checked={
-                      user.role === "CLIENT"
-                        ? editForm.lookingForCoach
-                        : editForm.lookingForClient
-                    }
-                    onChange={(e) =>
-                      setEditForm({
-                        ...editForm,
-                        [user.role === "CLIENT"
-                          ? "lookingForCoach"
-                          : "lookingForClient"]: e.target.checked,
-                      })
-                    }
-                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                  />
-                  <Label
-                    htmlFor={
-                      user.role === "CLIENT"
-                        ? "lookingForCoach"
-                        : "lookingForClient"
-                    }
-                    className="text-sm font-medium"
-                  >
-                    Looking for {user.role === "CLIENT" ? "Coach" : "Client"}
-                  </Label>
-                </div>
-              </div>
-
-              <div className="flex gap-3 mt-6">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsEditModalOpen(false)}
-                  disabled={isUpdating}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleEditSubmit}
-                  disabled={isUpdating}
-                  className="flex-1"
-                >
-                  {isUpdating ? "Updating..." : "Save Changes"}
-                </Button>
-              </div>
+                <FactRow
+                  label="Email verified"
+                  value={userData?.emailVerified ? "Yes" : "No"}
+                />
+              </dl>
             </div>
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
+
+      {/* Role-specific details */}
+      {isLoading ? (
+        <Card>
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
+            Loading profile…
+          </CardContent>
+        </Card>
+      ) : user.role === "CLIENT" && clientStore.client ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Client details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+              <FactRow
+                label="Date of birth"
+                value={
+                  clientStore.client.dateOfBirth
+                    ? new Date(clientStore.client.dateOfBirth).toLocaleDateString()
+                    : "—"
+                }
+              />
+              <FactRow
+                label="Coach assigned"
+                value={clientStore.client.coachId ? "Yes" : "None"}
+              />
+              <div className="sm:col-span-2">
+                <FactRow
+                  label="Bio"
+                  value={clientStore.client.bio || <span className="text-muted-foreground italic">No bio yet</span>}
+                />
+              </div>
+              <div className="flex items-center justify-between sm:col-span-2">
+                <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Looking for coach
+                </dt>
+                <Switch checked={clientStore.client.lookingForCoach ?? false} disabled />
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
+      ) : user.role === "COACH" && coachStore.coach ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Coach details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+              <FactRow
+                label="Certification"
+                value={coachStore.coach.certification || <span className="text-muted-foreground italic">Not specified</span>}
+              />
+              <div className="flex items-center justify-between">
+                <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Looking for clients
+                </dt>
+                <Switch checked={coachStore.coach.lookingForClient ?? false} disabled />
+              </div>
+              <div className="sm:col-span-2">
+                <FactRow
+                  label="Bio"
+                  value={coachStore.coach.bio || <span className="text-muted-foreground italic">No bio yet</span>}
+                />
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
+      ) : user.role === "ADMIN" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Admin access</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+              <FactRow label="Access level" value="Full system access" />
+              <FactRow label="Permissions" value="Manage users, coaches, clients, and settings" />
+            </dl>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit profile</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="email">Email (read-only)</Label>
+              <Input
+                id="email"
+                type="email"
+                value={
+                  user.role === "CLIENT"
+                    ? clientStore.client?.user?.email || ""
+                    : coachStore.coach?.user?.email || ""
+                }
+                disabled
+                className="bg-muted text-muted-foreground"
+              />
+            </div>
+
+            {user.role === "CLIENT" && (
+              <div className="space-y-1">
+                <Label htmlFor="dateOfBirth">Date of birth</Label>
+                <Input
+                  id="dateOfBirth"
+                  type="date"
+                  value={editForm.dateOfBirth}
+                  onChange={(e) => setEditForm({ ...editForm, dateOfBirth: e.target.value })}
+                />
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                value={editForm.bio}
+                onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+
+            {user.role === "COACH" && (
+              <div className="space-y-1">
+                <Label htmlFor="certification">Certification</Label>
+                <Input
+                  id="certification"
+                  value={editForm.certification}
+                  onChange={(e) => setEditForm({ ...editForm, certification: e.target.value })}
+                />
+              </div>
+            )}
+
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <Label htmlFor="looking-toggle" className="cursor-pointer">
+                Looking for {user.role === "CLIENT" ? "coach" : "client"}
+              </Label>
+              <Switch
+                id="looking-toggle"
+                checked={user.role === "CLIENT" ? editForm.lookingForCoach : editForm.lookingForClient}
+                onCheckedChange={(checked) =>
+                  setEditForm({
+                    ...editForm,
+                    [user.role === "CLIENT" ? "lookingForCoach" : "lookingForClient"]: checked,
+                  })
+                }
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditModalOpen(false)} disabled={isUpdating}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditSubmit} disabled={isUpdating}>
+              {isUpdating ? "Saving…" : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

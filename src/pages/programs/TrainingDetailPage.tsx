@@ -33,12 +33,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	closestCenter,
@@ -59,7 +61,7 @@ import { PageLoader } from "@/components/page/PageLoader";
 import { formatDateLong } from "@/lib/date";
 import { SortableExerciseRow } from "./components/SortableExerciseRow";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus } from "lucide-react";
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -93,11 +95,12 @@ export default function TrainingDetailPage() {
 	const [exercises, setExercises] = useState<TrainingExercise[]>([]);
 	const [library, setLibrary] = useState<Exercise[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [exerciseSearch, setExerciseSearch] = useState("");
 
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingTe, setEditingTe] = useState<TrainingExercise | null>(null);
 	const [deletingTe, setDeletingTe] = useState<TrainingExercise | null>(null);
+	const [comboOpen, setComboOpen] = useState(false);
+	const [isRefetching, setIsRefetching] = useState(false);
 
 	const form = useForm<ExerciseFormValues>({
 		resolver: zodResolver(exerciseSchema),
@@ -119,11 +122,11 @@ export default function TrainingDetailPage() {
 	);
 
 	useEffect(() => {
-		if (trainingId) fetchAll(+trainingId);
+		if (trainingId) fetchAll(+trainingId, true);
 	}, [trainingId]);
 
-	async function fetchAll(tid: number) {
-		setLoading(true);
+	async function fetchAll(tid: number, initial = false) {
+		if (initial) setLoading(true); else setIsRefetching(true);
 		try {
 			const [t, exs, lib] = await Promise.all([
 				TrainingApiClient.getInstance().getById(tid),
@@ -136,7 +139,7 @@ export default function TrainingDetailPage() {
 		} catch (err) {
 			showError(err, "Failed to load session.");
 		} finally {
-			setLoading(false);
+			if (initial) setLoading(false); else setIsRefetching(false);
 		}
 	}
 
@@ -144,7 +147,7 @@ export default function TrainingDetailPage() {
 
 	function openCreate() {
 		setEditingTe(null);
-		setExerciseSearch("");
+		setComboOpen(false);
 		form.reset({
 			exerciseId: 0,
 			sets: 3,
@@ -160,7 +163,7 @@ export default function TrainingDetailPage() {
 
 	function openEdit(te: TrainingExercise) {
 		setEditingTe(te);
-		setExerciseSearch("");
+		setComboOpen(false);
 		form.reset({
 			exerciseId: te.exerciseId,
 			sets: te.sets,
@@ -202,8 +205,8 @@ export default function TrainingDetailPage() {
 				});
 				showSuccess("Exercise added.");
 			}
+			await fetchAll(+trainingId!);
 			setDialogOpen(false);
-			fetchAll(+trainingId!);
 		} catch (err) {
 			showError(err, "Failed to save exercise.");
 		}
@@ -244,18 +247,15 @@ export default function TrainingDetailPage() {
 		}
 	}
 
-	// ── Filtered library for select ───────────────────────────────────────────
-
-	const filteredLibrary = library.filter((ex) =>
-		ex.name.toLowerCase().includes(exerciseSearch.toLowerCase())
-	);
-
 	// ── Render ────────────────────────────────────────────────────────────────
 
 	if (loading) return <PageLoader />;
 
 	return (
 		<div className="space-y-6 px-4 py-6 max-w-screen-xl mx-auto">
+			{isRefetching && (
+				<div className="fixed top-0 left-0 right-0 z-50 h-0.5 bg-primary animate-pulse" />
+			)}
 			{/* Header */}
 			<div className="flex items-center gap-4">
 				<Button
@@ -335,32 +335,54 @@ export default function TrainingDetailPage() {
 						{!editingTe && (
 							<div className="space-y-1">
 								<Label>Exercise</Label>
-								<Input
-									placeholder="Search exercise library…"
-									value={exerciseSearch}
-									onChange={(e) => setExerciseSearch(e.target.value)}
-									className="mb-1"
-								/>
 								<Controller
 									control={form.control}
 									name="exerciseId"
-									render={({ field }) => (
-										<Select
-											value={field.value ? String(field.value) : ""}
-											onValueChange={(v) => field.onChange(Number(v))}
-										>
-											<SelectTrigger>
-												<SelectValue placeholder="Select exercise…" />
-											</SelectTrigger>
-											<SelectContent>
-												{filteredLibrary.map((ex) => (
-													<SelectItem key={ex.id} value={String(ex.id)}>
-														{ex.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									)}
+									render={({ field }) => {
+										const selected = library.find((ex) => ex.id === field.value);
+										return (
+											<Popover open={comboOpen} onOpenChange={setComboOpen}>
+												<PopoverTrigger asChild>
+													<button
+														type="button"
+														role="combobox"
+														aria-expanded={comboOpen}
+														className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+													>
+														<span className={selected ? "" : "text-muted-foreground"}>
+															{selected ? selected.name : "Select exercise…"}
+														</span>
+														<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+													</button>
+												</PopoverTrigger>
+												<PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+													<Command>
+														<CommandInput placeholder="Search exercises…" />
+														<CommandList>
+															<CommandEmpty>No exercise found.</CommandEmpty>
+															<CommandGroup>
+																{library.map((ex) => (
+																	<CommandItem
+																		key={ex.id}
+																		value={ex.name}
+																		onSelect={() => {
+																			field.onChange(ex.id);
+																			setComboOpen(false);
+																		}}
+																	>
+																		<Check
+																			className={`mr-2 h-4 w-4 ${field.value === ex.id ? "opacity-100" : "opacity-0"}`}
+																		/>
+																		{ex.name}
+																	</CommandItem>
+																))}
+															</CommandGroup>
+														</CommandList>
+													</Command>
+												</PopoverContent>
+											</Popover>
+										);
+									}}
 								/>
 								{form.formState.errors.exerciseId && (
 									<p className="text-sm text-red-500">
