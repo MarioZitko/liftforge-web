@@ -17,6 +17,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	DialogTrigger,
 } from "@/components/ui/dialog";
 import {
 	AlertDialog,
@@ -27,6 +28,7 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
+	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -88,7 +90,7 @@ export default function ClientsPage() {
 					lastActivity: "", // Placeholder: Need last activity from API
 					isVerified: client.user?.emailVerified || false,
 					lookingForCoach: client.lookingForCoach ?? true,
-				})
+				}),
 			);
 			setClients(transformedClients);
 		} catch (error) {
@@ -133,7 +135,7 @@ export default function ClientsPage() {
 	}
 
 	const filteredClients = clients.filter((client) =>
-		client.name.toLowerCase().includes(query.searchText?.toLowerCase() ?? "")
+		client.name.toLowerCase().includes(query.searchText?.toLowerCase() ?? ""),
 	);
 
 	const sortedClients = [...filteredClients].sort((a, b) => {
@@ -148,7 +150,7 @@ export default function ClientsPage() {
 
 	const pagedClients = sortedClients.slice(
 		(query.pageNumber - 1) * query.pageSize,
-		query.pageNumber * query.pageSize
+		query.pageNumber * query.pageSize,
 	);
 
 	const columns: Column<ClientTableData>[] = [
@@ -324,7 +326,9 @@ export default function ClientsPage() {
 						</div>
 						<DialogFooter>
 							<Button type="submit" disabled={form.formState.isSubmitting}>
-								{form.formState.isSubmitting ? "Inviting..." : "Send Invitation"}
+								{form.formState.isSubmitting
+									? "Inviting..."
+									: "Send Invitation"}
 							</Button>
 						</DialogFooter>
 					</form>
