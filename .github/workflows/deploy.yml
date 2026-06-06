@@ -13,6 +13,9 @@ jobs:
   build-and-deploy:
     name: Build & Deploy (${{ github.ref_name }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
 
