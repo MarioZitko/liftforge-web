@@ -63,13 +63,14 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/amd64,linux/arm64
           build-args: |
             VITE_API_BASE_URL=${{ steps.env.outputs.VITE_API_BASE_URL }}
           tags: |
             ghcr.io/${{ steps.env.outputs.IMAGE_OWNER }}/liftforge-web:${{ steps.env.outputs.ENV }}
             ghcr.io/${{ steps.env.outputs.IMAGE_OWNER }}/liftforge-web:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ github.ref_name }}-web
+          cache-to: type=gha,mode=max,scope=${{ github.ref_name }}-web
 
       # ── 4. Deploy to VPS ─────────────────────────────────────────────────────
       - name: Deploy to VPS
