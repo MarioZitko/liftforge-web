@@ -92,8 +92,8 @@ export default function UserFormModal({
         showSuccess("User created");
       }
       onSuccess();
-    } catch {
-      showError("Failed to save user");
+    } catch (err) {
+      showError(err, "Failed to save user");
     }
   };
 

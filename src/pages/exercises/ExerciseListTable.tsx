@@ -57,8 +57,8 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 					? await exercisesApi.getCoachExercises(coachExerciseFilter === "mine")
 					: await exercisesApi.getAll();
 			setExercises(data);
-		} catch {
-			showError("Failed to fetch exercises");
+		} catch (err) {
+			showError(err, "Failed to fetch exercises");
 		} finally {
 			setLoading(false);
 		}
@@ -73,8 +73,8 @@ export default function ExerciseListTable({ role }: IExerciseListTableProps) {
 			await exercisesApi.delete(id);
 			showSuccess("Exercise deleted");
 			fetchExercises();
-		} catch {
-			showError("Failed to delete exercise");
+		} catch (err) {
+			showError(err, "Failed to delete exercise");
 		}
 	};
 

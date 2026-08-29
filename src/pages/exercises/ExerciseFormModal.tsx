@@ -111,8 +111,8 @@ export default function ExerciseFormModal({
 			}
 			onSuccess();
 			onClose();
-		} catch {
-			showError("Failed to save exercise");
+		} catch (err) {
+			showError(err, "Failed to save exercise");
 		}
 	};
 
