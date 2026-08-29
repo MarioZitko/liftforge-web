@@ -46,19 +46,10 @@ src/
   components/          # reusable UI components
     ui/                # shadcn/ui generated components (don't hand-edit)
     layout/            # AppShell, Sidebar, Header
-    buttons/
-    dataTable/
-    dropdown/
-    fileUpload/
-    grid/
-    input/
     loaders/
     page/
     shared/
     sidebar/
-    sortableList/
-    submitHandler/
-    typography/
   hooks/
     useAuth.ts         # login/logout, session hydration on load
     useMobile.ts
@@ -193,7 +184,23 @@ shadcn/ui `<Form>` components wrap RHF field state for accessible error messages
 - `cn()` from [`src/lib/utils.ts`](src/lib/utils.ts) merges class names (clsx + tailwind-merge)
 - Dark/light theme via `next-themes`; avoid hard-coding `text-black` or `bg-white` — use semantic tokens
 - shadcn/ui components live in `src/components/ui/` — regenerate with `npx shadcn@latest add <component>`, don't hand-edit
-- Use `tailwind-variants` for component variants instead of long ternary strings
+- Use `cva` (class-variance-authority) for component variants instead of long ternary strings — this is what's actually used throughout `components/ui/`, not `tailwind-variants` (installed but unused)
+- **Extract a component instead of writing/repeating long inline `className` strings.** See [`.claude/docs/02-component-library.md`](.claude/docs/02-component-library.md) for the full rule, what to use today, and known dead-code traps to avoid.
+
+## Detailed guides
+
+Deeper reference material lives in [`.claude/docs/`](.claude/docs/README.md) (index there). These
+are loaded automatically as part of this file's context — read them, don't just skim the headings:
+
+@.claude/docs/01-coding-standards.md
+@.claude/docs/02-component-library.md
+@.claude/docs/03-testing.md
+@.claude/docs/04-refactor-backlog.md
+
+## Ticket structure
+
+Feature/fix work is tracked as tickets under [`docs/`](docs/README.md) (`docs/phase-N-tickets.md`),
+following a fixed convention — see [`docs/README.md`](docs/README.md).
 
 ## Environment variables
 
