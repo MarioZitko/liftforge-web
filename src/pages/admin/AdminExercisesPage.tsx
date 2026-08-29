@@ -48,7 +48,7 @@ export default function AdminExercisesPage() {
 		exercisesApi
 			.getAll()
 			.then(setExercises)
-			.catch(() => showError("Failed to fetch exercises"))
+			.catch((err) => showError(err, "Failed to fetch exercises"))
 			.finally(() => setLoading(false));
 	};
 
@@ -59,8 +59,8 @@ export default function AdminExercisesPage() {
 			await exercisesApi.delete(id);
 			showSuccess("Exercise deleted");
 			fetchExercises();
-		} catch {
-			showError("Failed to delete exercise");
+		} catch (err) {
+			showError(err, "Failed to delete exercise");
 		}
 	};
 

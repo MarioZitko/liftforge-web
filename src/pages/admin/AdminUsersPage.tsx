@@ -55,7 +55,7 @@ export default function AdminUsersPage() {
 		usersApi
 			.getAll()
 			.then(setUsers)
-			.catch(() => showError("Failed to fetch users"))
+			.catch((err) => showError(err, "Failed to fetch users"))
 			.finally(() => setLoading(false));
 	};
 
@@ -66,8 +66,8 @@ export default function AdminUsersPage() {
 			await usersApi.delete(id);
 			showSuccess("User deleted");
 			fetchUsers();
-		} catch {
-			showError("Failed to delete user");
+		} catch (err) {
+			showError(err, "Failed to delete user");
 		}
 	};
 
