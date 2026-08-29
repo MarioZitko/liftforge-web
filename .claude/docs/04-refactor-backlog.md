@@ -26,12 +26,11 @@ is the "why we think this" narrative; that file is where to check status/DoD/dep
    `ResetPasswordPage.tsx:34`, `ConfirmEmailPage.tsx:19`, `OAuthFinalizePage.tsx:24`. Fix: change
    `catch { showError("...") }` to `catch (err) { showError(err, "..."); }` at each site.
 
-3. **Duplicated icon-button class strings with diverging values** —
-   `src/pages/programs/components/ProgramGrid.tsx:48-49` and
-   `src/pages/programs/components/SessionCell.tsx:41` each define their own `iconBtnCls`-style
-   string for what's meant to be the same visual element, with different actual class values.
-   Extract one shared `IconButton` component (the intent `components/buttons/` was originally
-   built for) and use it in both places.
+3. ~~**Duplicated icon-button class strings with diverging values.**~~ — **resolved in Issue 69.**
+   `ProgramGrid.tsx` and `SessionCell.tsx` each defined their own `iconBtnCls`-style string with
+   different actual class values; both now use the shared `IconButton` component
+   (`src/components/shared/IconButton.tsx`, `tone`/`size`/`destructive` `cva` variants). See
+   [components.md](02-component-library.md) for the current state.
 
 4. **`ProgramDetailPage.tsx` (782 lines) and `ClientProgramDetailPage.tsx` (258 lines) are
    near-duplicate coach/client views** of the same program-detail feature, each repeating the same

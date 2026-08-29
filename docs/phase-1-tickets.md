@@ -116,11 +116,26 @@ correctly surface via `showError(err, fallback)`.
 At each site, change `catch { showError("..."); }` to `catch (err) { showError(err, "..."); }` —
 keep the existing string as the fallback (second) argument.
 
+### Decision (recorded)
+
+Fixed in `ade5303`. All five actual discard sites (`AdminExercisesPage.tsx`'s fetch/delete,
+`AdminUsersPage.tsx`'s fetch/delete, `UserFormModal.tsx`'s save, `ExerciseFormModal.tsx`'s save,
+`ExerciseListTable.tsx`'s fetch/delete) now bind `err` and pass it as `showError(err, fallback)`.
+`ResetPasswordPage.tsx:34`, `ConfirmEmailPage.tsx:19`, and `OAuthFinalizePage.tsx:24` needed no
+change — those three call sites are pre-flight client-side validation (missing token / empty name)
+with no caught backend error to discard in the first place; their actual `catch` blocks already
+bound `err` correctly before this ticket.
+
 ### Definition of Done
 
-- [ ] All listed call sites bind the caught error and pass it to `showError`.
+- [x] All listed call sites bind the caught error and pass it to `showError`.
 - [ ] Spot-check: trigger a real validation error on at least one of these forms and confirm the
-  specific backend message now renders (not just the generic fallback).
+  specific backend message now renders (not just the generic fallback). Not run against a live
+  app — needs a running API + frontend and a real validation error to trigger; flag for whoever
+  picks this up for review. Traced the path statically instead: `base.api.ts`'s response
+  interceptor rejects with the backend's `message` string (or joined array) directly, and
+  `showError`'s `typeof error === "string"` branch renders that string as-is, so the specific
+  backend message should reach the toast — but this hasn't been observed in a browser.
 
 ---
 
@@ -146,12 +161,30 @@ small `tone`/`size` variant via `cva` if the two contexts genuinely need visuall
 treatments (don't add a variant just to avoid picking one style; confirm they really differ
 first). Replace both files' local `iconBtnCls` usages with it.
 
+### Decision (recorded)
+
+Issue 67 deleted `components/buttons/`, so `IconButton` lives in `src/components/shared/IconButton.tsx`
+(not area-specific, so not nested under a `shared/<Area>/` folder). The two files' original class
+strings genuinely differed on two axes, not just accidentally — `ProgramGrid.tsx`'s buttons sit on
+the `bg-primary` block/week header (needs `text-primary-foreground/60` + hover fill) with `p-1`
+padding, while `SessionCell.tsx`'s sit on the card body (needs `text-muted-foreground`) with a
+tighter `p-0.5`. Modeled as two `cva` variants — `tone: "header" | "muted"` (default `"muted"`) and
+`size: "sm" | "xs"` (default `"xs"`) — plus a `destructive` boolean compound-variant that reproduces
+each context's own delete-button hover color (`hover:text-red-300` for `header`, `hover:text-red-400`
+for `muted`) instead of collapsing them to one color. `ProgramGrid.tsx` passes `tone="header"
+size="sm"` explicitly at all 9 call sites; `SessionCell.tsx` relies on the `muted`/`xs` defaults.
+Icon size (`w-3.5 h-3.5` vs `w-3 h-3`) stays with the `<Pencil>`/`<Trash2>`/etc. child, not the
+button, matching how the original code already varied it independent of `iconBtnCls`.
+
 ### Definition of Done
 
-- [ ] One `IconButton` component exists; both files use it.
-- [ ] No remaining local `iconBtnCls`-style string in either file.
+- [x] One `IconButton` component exists; both files use it.
+- [x] No remaining local `iconBtnCls`-style string in either file.
 - [ ] Visual check on both the program grid and session cell confirms icon buttons still look
-  correct.
+  correct. Not run in a browser — needs `yarn dev` + a real program with blocks/weeks/sessions to
+  click through; flag for whoever picks this up for review. Verified statically instead: every
+  original class string is reproduced exactly by the `tone`/`size`/`destructive` combination used
+  at each call site (traced by hand, see Decision above), and `npx tsc --noEmit` passes.
 
 ---
 

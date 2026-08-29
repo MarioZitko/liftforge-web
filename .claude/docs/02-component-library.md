@@ -37,6 +37,7 @@ actually use today**, not what's aspirationally sitting in the tree.
 | `Page` / `SiteHeader` | `src/components/page/` | Page-level app-shell layout only (already wired into the shell, you won't need to touch this for feature work) |
 | `cn()` | `src/lib/utils.ts` | Merging/conditionally applying classNames. Use it any time a className is conditional, ever. |
 | `cva` (class-variance-authority) | see `src/components/ui/button.tsx`, `badge.tsx`, etc. | The actual variant mechanism in this codebase for a component with a fixed set of style variants (size/variant/tone). |
+| `IconButton` | `src/components/shared/IconButton.tsx` | Any small icon-only action button (edit/duplicate/delete on a header, card, or row). `tone: "header" \| "muted"` picks the color set for the background it sits on, `size: "sm" \| "xs"` the padding, `destructive` the delete-hover color — see `ProgramGrid.tsx`/`SessionCell.tsx` for both contexts in use. |
 
 **Correction to an old doc claim:** the root `CLAUDE.md` says to prefer `tailwind-variants` for
 variants. In practice `tailwind-variants` is installed but has zero usages anywhere in `src/` —
@@ -108,8 +109,7 @@ change in `SelectableCard.tsx`, not a find-and-replace across every page that co
 string.
 
 **Known duplicated strings to consolidate first if you touch these files:**
-- `iconBtnCls`-style inline strings independently defined in `src/pages/programs/components/ProgramGrid.tsx` and `src/pages/programs/components/SessionCell.tsx` with *different* values for what's meant to be the same icon-button style — this is exactly the bug class the component layer exists to prevent. If you touch either file, pull this into one shared `IconButton` component instead of adding a third copy.
-- The repeated `<button className="flex items-center gap-2 text-left flex-1 hover:opacity-80">` block in `ClientProgramDetailPage.tsx` and `ProgramDetailPage.tsx` (3 copies each, 6 total) — same fix.
+- The repeated `<button className="flex items-center gap-2 text-left flex-1 hover:opacity-80">` block in `ClientProgramDetailPage.tsx` and `ProgramDetailPage.tsx` (3 copies each, 6 total) — extract a shared row component (tracked as Issue 70).
 
 ## Legitimate exceptions
 

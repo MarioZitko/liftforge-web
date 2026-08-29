@@ -1,5 +1,6 @@
 import { TrainingBlock, TrainingWeekSummary } from "@/api/training-block/training-block.types";
 import { Training } from "@/api/training/training.types";
+import { IconButton } from "@/components/shared/IconButton";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/date";
 import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
@@ -45,8 +46,6 @@ function BlockGrid({
   const headerCls = "bg-primary text-primary-foreground";
   const subHeaderCls = "bg-primary/90 text-primary-foreground";
   const headerBorderCls = "border-primary/30";
-  const iconBtnCls =
-    "text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-colors p-1 rounded";
 
   if (weeks.length === 0) {
     return (
@@ -55,15 +54,21 @@ function BlockGrid({
           <h3 className="font-bold text-sm uppercase tracking-wide flex-1">{block.name}</h3>
           {actions && (
             <div className="flex items-center gap-0.5">
-              <button onClick={() => actions.onEditBlock(block)} className={iconBtnCls} title="Edit block">
+              <IconButton tone="header" size="sm" onClick={() => actions.onEditBlock(block)} title="Edit block">
                 <Pencil className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={() => actions.onAddWeek(block.id)} className={iconBtnCls} title="Add week">
+              </IconButton>
+              <IconButton tone="header" size="sm" onClick={() => actions.onAddWeek(block.id)} title="Add week">
                 <Plus className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={() => actions.onDeleteBlock(block)} className={cn(iconBtnCls, "hover:text-red-300")} title="Delete block">
+              </IconButton>
+              <IconButton
+                tone="header"
+                size="sm"
+                destructive
+                onClick={() => actions.onDeleteBlock(block)}
+                title="Delete block"
+              >
                 <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              </IconButton>
             </div>
           )}
         </div>
@@ -85,15 +90,21 @@ function BlockGrid({
         </span>
         {actions && (
           <div className="flex items-center gap-0.5 shrink-0">
-            <button onClick={() => actions.onEditBlock(block)} className={iconBtnCls} title="Edit block">
+            <IconButton tone="header" size="sm" onClick={() => actions.onEditBlock(block)} title="Edit block">
               <Pencil className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={() => actions.onAddWeek(block.id)} className={iconBtnCls} title="Add week">
+            </IconButton>
+            <IconButton tone="header" size="sm" onClick={() => actions.onAddWeek(block.id)} title="Add week">
               <Plus className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={() => actions.onDeleteBlock(block)} className={cn(iconBtnCls, "hover:text-red-300")} title="Delete block">
+            </IconButton>
+            <IconButton
+              tone="header"
+              size="sm"
+              destructive
+              onClick={() => actions.onDeleteBlock(block)}
+              title="Delete block"
+            >
               <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            </IconButton>
           </div>
         )}
       </div>
@@ -141,27 +152,31 @@ function BlockGrid({
                       </div>
                       {actions && (
                         <div className="flex items-center gap-0.5 shrink-0 mt-0.5">
-                          <button
+                          <IconButton
+                            tone="header"
+                            size="sm"
                             onClick={() => actions.onEditWeek(week, block.id)}
-                            className={iconBtnCls}
                             title="Edit week"
                           >
                             <Pencil className="w-3 h-3" />
-                          </button>
-                          <button
+                          </IconButton>
+                          <IconButton
+                            tone="header"
+                            size="sm"
                             onClick={() => actions.onDuplicateWeek(week, block.id)}
-                            className={iconBtnCls}
                             title="Duplicate week"
                           >
                             <Copy className="w-3 h-3" />
-                          </button>
-                          <button
+                          </IconButton>
+                          <IconButton
+                            tone="header"
+                            size="sm"
+                            destructive
                             onClick={() => actions.onDeleteWeek(week, block.id)}
-                            className={cn(iconBtnCls, "hover:text-red-300")}
                             title="Delete week"
                           >
                             <Trash2 className="w-3 h-3" />
-                          </button>
+                          </IconButton>
                         </div>
                       )}
                     </div>
