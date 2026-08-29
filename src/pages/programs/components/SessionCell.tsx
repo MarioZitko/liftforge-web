@@ -1,6 +1,6 @@
 import { Training, TrainingExerciseSummary } from "@/api/training/training.types";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { IconButton } from "@/components/shared/IconButton";
 import { formatDate } from "@/lib/date";
 import { CheckCircle2, ChevronDown, ChevronRight, Copy, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -38,7 +38,6 @@ export function SessionCell({
   const allLogged = loggedCount > 0 && loggedCount === exercises.length;
 
   const showActions = variant === "coach" && (onEditSession || onDeleteSession || onDuplicateSession);
-  const iconBtnCls = "text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded";
 
   return (
     <div className="flex flex-col h-full">
@@ -84,19 +83,19 @@ export function SessionCell({
           {showActions && (
             <div className="flex items-center gap-0.5 shrink-0">
               {onEditSession && (
-                <button onClick={() => onEditSession(session)} className={iconBtnCls} title="Edit session">
+                <IconButton onClick={() => onEditSession(session)} title="Edit session">
                   <Pencil className="w-3 h-3" />
-                </button>
+                </IconButton>
               )}
               {onDuplicateSession && (
-                <button onClick={() => onDuplicateSession(session)} className={iconBtnCls} title="Duplicate session">
+                <IconButton onClick={() => onDuplicateSession(session)} title="Duplicate session">
                   <Copy className="w-3 h-3" />
-                </button>
+                </IconButton>
               )}
               {onDeleteSession && (
-                <button onClick={() => onDeleteSession(session)} className={cn(iconBtnCls, "hover:text-red-400")} title="Delete session">
+                <IconButton destructive onClick={() => onDeleteSession(session)} title="Delete session">
                   <Trash2 className="w-3 h-3" />
-                </button>
+                </IconButton>
               )}
             </div>
           )}
