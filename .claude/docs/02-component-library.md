@@ -3,7 +3,7 @@
 This is the most important file in `.claude/` for this project. The whole point of having a
 custom component layer is: **when we want to change how something looks, we change it in one
 place** — a component file — not in every page that happens to use it. A page file should read
-like a description of *what* is on the screen, not *how* each pixel is styled.
+like a description of _what_ is on the screen, not _how_ each pixel is styled.
 
 ## The rule
 
@@ -21,23 +21,23 @@ raw HTML.
 A real effort was made in commit `42d821d` ("Replace pure html components with reusable ones") to
 build a component library for exactly this purpose. In practice, most of what it built is **not
 used** by any page today, and a second, competing effort (`src/components/shared/`) grew up
-alongside it and *is* what pages actually use. Don't be surprised by dead code — it's tracked in
+alongside it and _is_ what pages actually use. Don't be surprised by dead code — it's tracked in
 [refactor-backlog.md](04-refactor-backlog.md). The practical guidance below reflects **what to
 actually use today**, not what's aspirationally sitting in the tree.
 
 ### Use these (actually adopted, keep using them)
 
-| Component | Where | Use for |
-|---|---|---|
-| `src/components/ui/*` | shadcn/ui primitives | Buttons, inputs, selects, checkboxes, dialogs, tables, tabs, etc. **Never hand-edit these** — regenerate with `npx shadcn@latest add <name>`. |
-| `ServerTable` | `src/components/shared/DataTable/ServerTable.tsx` | Any paginated/filterable/searchable list view. This is the standard list pattern — see `src/pages/exercises/ExerciseListTable.tsx` for the reference usage. |
-| `PaginationControls` | `src/components/shared/DataTable/PaginationControls.tsx` | Pagination UI, used inside `ServerTable` |
-| `MultiSelectField` | `src/components/shared/Form/MultiSelectField.tsx` | Multi-select form fields |
-| `toast.util` (`showSuccess`/`showError`) | `src/components/shared/utils/toast.util.ts` | All success/error toasts. **Always call `showError(err, "fallback message")` with the caught error bound** — never `showError("static string")` in a bare `catch {}`. Swallowing the real error hides genuinely useful backend validation messages from the user. |
-| `Page` / `SiteHeader` | `src/components/page/` | Page-level app-shell layout only (already wired into the shell, you won't need to touch this for feature work) |
-| `cn()` | `src/lib/utils.ts` | Merging/conditionally applying classNames. Use it any time a className is conditional, ever. |
-| `cva` (class-variance-authority) | see `src/components/ui/button.tsx`, `badge.tsx`, etc. | The actual variant mechanism in this codebase for a component with a fixed set of style variants (size/variant/tone). |
-| `IconButton` | `src/components/shared/IconButton.tsx` | Any small icon-only action button (edit/duplicate/delete on a header, card, or row). `tone: "header" \| "muted"` picks the color set for the background it sits on, `size: "sm" \| "xs"` the padding, `destructive` the delete-hover color — see `ProgramGrid.tsx`/`SessionCell.tsx` for both contexts in use. |
+| Component                                | Where                                                    | Use for                                                                                                                                                                                                                                                                                                        |
+| ---------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/ui/*`                    | shadcn/ui primitives                                     | Buttons, inputs, selects, checkboxes, dialogs, tables, tabs, etc. **Never hand-edit these** — regenerate with `npx shadcn@latest add <name>`.                                                                                                                                                                  |
+| `ServerTable`                            | `src/components/shared/DataTable/ServerTable.tsx`        | Any paginated/filterable/searchable list view. This is the standard list pattern — see `src/pages/exercises/ExerciseListTable.tsx` for the reference usage.                                                                                                                                                    |
+| `PaginationControls`                     | `src/components/shared/DataTable/PaginationControls.tsx` | Pagination UI, used inside `ServerTable`                                                                                                                                                                                                                                                                       |
+| `MultiSelectField`                       | `src/components/shared/Form/MultiSelectField.tsx`        | Multi-select form fields                                                                                                                                                                                                                                                                                       |
+| `toast.util` (`showSuccess`/`showError`) | `src/components/shared/utils/toast.util.ts`              | All success/error toasts. **Always call `showError(err, "fallback message")` with the caught error bound** — never `showError("static string")` in a bare `catch {}`. Swallowing the real error hides genuinely useful backend validation messages from the user.                                              |
+| `Page` / `SiteHeader`                    | `src/components/page/`                                   | Page-level app-shell layout only (already wired into the shell, you won't need to touch this for feature work)                                                                                                                                                                                                 |
+| `cn()`                                   | `src/lib/utils.ts`                                       | Merging/conditionally applying classNames. Use it any time a className is conditional, ever.                                                                                                                                                                                                                   |
+| `cva` (class-variance-authority)         | see `src/components/ui/button.tsx`, `badge.tsx`, etc.    | The actual variant mechanism in this codebase for a component with a fixed set of style variants (size/variant/tone).                                                                                                                                                                                          |
+| `IconButton`                             | `src/components/shared/IconButton.tsx`                   | Any small icon-only action button (edit/duplicate/delete on a header, card, or row). `tone: "header" \| "muted"` picks the color set for the background it sits on, `size: "sm" \| "xs"` the padding, `destructive` the delete-hover color — see `ProgramGrid.tsx`/`SessionCell.tsx` for both contexts in use. |
 
 **Correction to an old doc claim:** the root `CLAUDE.md` says to prefer `tailwind-variants` for
 variants. In practice `tailwind-variants` is installed but has zero usages anywhere in `src/` —
@@ -78,6 +78,7 @@ If a task needs drag-and-drop, follow the live pattern already used in
   filters={tableFilters}
 />
 ```
+
 State (search/sort/pagination/filter) is owned by the component; the page only supplies data and
 column definitions. This is the shape to replicate for any new list view.
 
@@ -98,28 +99,36 @@ a shadcn component already does (a clickable list row, an icon button, a card), 
 // e.g. src/components/shared/SelectableCard.tsx
 export function SelectableCard({ children, ...props }: SelectableCardProps) {
   return (
-    <button className={cn(selectableCardVariants(), props.className)} {...props}>
+    <button
+      className={cn(selectableCardVariants(), props.className)}
+      {...props}
+    >
       {children}
     </button>
   );
 }
 ```
+
 Now a future "make selectable rows have a colored left border on hover" request is a one-line
 change in `SelectableCard.tsx`, not a find-and-replace across every page that copy-pasted the
 string.
 
 **Known duplicated strings to consolidate first if you touch these files:**
+
 - The repeated `<button className="flex items-center gap-2 text-left flex-1 hover:opacity-80">` block in `ClientProgramDetailPage.tsx` and `ProgramDetailPage.tsx` (3 copies each, 6 total) — extract a shared row component (tracked as Issue 70).
+- `iconBtnCls`-style inline strings independently defined in `src/pages/programs/components/ProgramGrid.tsx` and `src/pages/programs/components/SessionCell.tsx` with _different_ values for what's meant to be the same icon-button style — this is exactly the bug class the component layer exists to prevent. If you touch either file, pull this into one shared `IconButton` component instead of adding a third copy.
+
+**Resolved:** the repeated `<button className="flex items-center gap-2 text-left flex-1 hover:opacity-80">` block that used to appear 3 times each in `ClientProgramDetailPage.tsx` and `ProgramDetailPage.tsx` (6 copies total) is now `src/components/shared/Programs/CollapsibleRowTrigger.tsx` (Issue 70) — use it for any new collapsible row trigger in the program-detail views instead of inlining the button again.
 
 ## Legitimate exceptions
 
 - `src/pages/programs/components/SortableExerciseRow.tsx` uses a raw `<button>` for the drag
   handle because `@dnd-kit` needs to spread its ref/listeners directly onto a native element —
   this is documented with a comment in the file. Follow that pattern (a short comment explaining
-  *why* raw HTML is required) if you hit a similar library constraint elsewhere, rather than
+  _why_ raw HTML is required) if you hit a similar library constraint elsewhere, rather than
   silently reintroducing raw HTML for convenience.
 - OAuth/redirect-driven pages and other places where there's genuinely no reusable shape yet are
-  fine to write plainly — the rule is about *repeated or lengthy* class strings, not about
+  fine to write plainly — the rule is about _repeated or lengthy_ class strings, not about
   banning `className` outright.
 
 ## Decision checklist before writing UI
