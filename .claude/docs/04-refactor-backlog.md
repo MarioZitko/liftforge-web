@@ -33,12 +33,12 @@ is the "why we think this" narrative; that file is where to check status/DoD/dep
    Extract one shared `IconButton` component (the intent `components/buttons/` was originally
    built for) and use it in both places.
 
-4. **`ProgramDetailPage.tsx` (782 lines) and `ClientProgramDetailPage.tsx` (258 lines) are
-   near-duplicate coach/client views** of the same program-detail feature, each repeating the same
-   `<button className="flex items-center gap-2 text-left flex-1 hover:opacity-80">` block 3 times
-   (6 copies total across both files). `ProgramGrid.tsx` already demonstrates the right pattern
-   for this exact problem — a single component with a `variant: "coach" | "client"` prop. Apply
-   that same approach to collapse the two detail pages.
+4. ~~**`ProgramDetailPage.tsx` / `ClientProgramDetailPage.tsx` near-duplicate button block**~~ —
+   **resolved in Issue 70.** The repeated `<button className="flex items-center gap-2 text-left
+   flex-1 hover:opacity-80">` block (3 copies per file, 6 total) is now the shared
+   `src/components/shared/Programs/CollapsibleRowTrigger.tsx` component, used by both pages. The
+   two pages' broader structure (coach CRUD vs. client read-only) was left as-is — genuinely
+   diverging logic beyond the repeated markup, out of scope for the row-extraction minimum.
 
 ## Medium priority
 

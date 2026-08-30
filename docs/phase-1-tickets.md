@@ -177,12 +177,27 @@ shared row component first; then evaluate whether more of the two pages' structu
 behind the same variant-prop approach (don't force a full merge if the two views have genuinely
 diverging logic beyond the repeated markup — the row extraction alone is the required minimum).
 
+### Resolution (recorded)
+
+Extracted the repeated trigger block into `src/components/shared/Programs/CollapsibleRowTrigger.tsx`
+— a small component taking `open` (drives the chevron icon), an `iconClassName` (the only thing
+that actually varied between the three nesting levels — icon size, and muted color at the training
+level), and `children` for the row content. Used as the sole child of each `<CollapsibleTrigger
+asChild>` in both files (3 call sites in `ProgramDetailPage.tsx`, 3 in
+`ClientProgramDetailPage.tsx`). No `forwardRef` needed — React 19 passes `ref` through as a plain
+prop, which flows correctly through the component's `{...props}` spread for Radix's `asChild`/Slot
+mechanism.
+
+Scope was kept to the row extraction per the ticket's minimum bar — the two pages' surrounding
+structure (coach-only CRUD dialogs/toolbar actions vs. the client's read-only view) diverges
+enough that forcing a full `variant`-prop merge (as `ProgramGrid.tsx` does) wasn't attempted.
+
 ### Definition of Done
 
-- [ ] The repeated button markup exists in exactly one place, used by both pages.
-- [ ] Both pages render/behave identically to before for their respective roles.
-- [ ] Combined line count across both files shrinks (this removes duplication, it doesn't just
-  relocate it).
+- [x] The repeated button markup exists in exactly one place, used by both pages.
+- [x] Both pages render/behave identically to before for their respective roles.
+- [x] Combined line count across both files shrinks (this removes duplication, it doesn't just
+  relocate it). (782 + 258 = 1040 lines before → 771 + 247 = 1018 lines after.)
 
 ---
 

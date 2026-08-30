@@ -8,6 +8,7 @@ import ProgramsApiClient from "@/api/programs/programs.api";
 import { Program } from "@/api/programs/programs.types";
 import { ProgramGrid } from "./components/ProgramGrid";
 import { ViewToggle } from "./components/ViewToggle";
+import { CollapsibleRowTrigger } from "@/components/shared/Programs/CollapsibleRowTrigger";
 import { showError, showSuccess } from "@/components/shared/utils/toast.util";
 import {
 	AlertDialog,
@@ -45,7 +46,7 @@ import { PageLoader } from "@/components/page/PageLoader";
 import { useToggleSet } from "@/hooks/useToggleSet";
 import { formatDate, todayIso } from "@/lib/date";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, ChevronRight, Copy, Dumbbell, Plus } from "lucide-react";
+import { Copy, Dumbbell, Plus } from "lucide-react";
 import { useProgramView } from "@/hooks/useProgramView";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -472,12 +473,7 @@ export default function ProgramDetailPage() {
 							<CardHeader className="pb-2">
 								<div className="flex items-center justify-between">
 									<CollapsibleTrigger asChild>
-										<button className="flex items-center gap-2 text-left flex-1 hover:opacity-80">
-											{openBlocks.has(block.id) ? (
-												<ChevronDown className="w-4 h-4 shrink-0" />
-											) : (
-												<ChevronRight className="w-4 h-4 shrink-0" />
-											)}
+										<CollapsibleRowTrigger open={openBlocks.has(block.id)} iconClassName="w-4 h-4">
 											<div>
 												<CardTitle className="text-base">{block.name}</CardTitle>
 												{block.description && (
@@ -486,7 +482,7 @@ export default function ProgramDetailPage() {
 													</p>
 												)}
 											</div>
-										</button>
+										</CollapsibleRowTrigger>
 									</CollapsibleTrigger>
 									<div className="flex gap-2 shrink-0 ml-4">
 										<Badge variant="outline" className="text-xs">
@@ -522,12 +518,7 @@ export default function ProgramDetailPage() {
 											>
 												<div className="flex items-center justify-between px-4 py-2">
 													<CollapsibleTrigger asChild>
-														<button className="flex items-center gap-2 text-left flex-1 hover:opacity-80">
-															{openWeeks.has(week.id) ? (
-																<ChevronDown className="w-3 h-3 shrink-0" />
-															) : (
-																<ChevronRight className="w-3 h-3 shrink-0" />
-															)}
+														<CollapsibleRowTrigger open={openWeeks.has(week.id)} iconClassName="w-3 h-3">
 															<span className="font-medium text-sm">{week.name}</span>
 															<Badge variant="secondary" className="text-xs">
 																Week {week.number}
@@ -536,7 +527,7 @@ export default function ProgramDetailPage() {
 																{week.trainings.length} session
 																{week.trainings.length !== 1 ? "s" : ""}
 															</span>
-														</button>
+														</CollapsibleRowTrigger>
 													</CollapsibleTrigger>
 													<div className="flex gap-2 shrink-0">
 														<Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => openEditWeek(week, block.id)}>
@@ -577,12 +568,10 @@ export default function ProgramDetailPage() {
 																<div className="bg-muted/30 rounded">
 																	<div className="flex items-center justify-between px-3 py-2">
 																		<CollapsibleTrigger asChild>
-																			<button className="flex items-center gap-2 text-left flex-1 hover:opacity-80">
-																				{openTrainings.has(training.id) ? (
-																					<ChevronDown className="w-3 h-3 shrink-0 text-muted-foreground" />
-																				) : (
-																					<ChevronRight className="w-3 h-3 shrink-0 text-muted-foreground" />
-																				)}
+																			<CollapsibleRowTrigger
+																				open={openTrainings.has(training.id)}
+																				iconClassName="w-3 h-3 text-muted-foreground"
+																			>
 																				<Dumbbell className="w-3 h-3 text-muted-foreground" />
 																				<span className="text-sm font-medium">{training.name}</span>
 																				<span className="text-xs text-muted-foreground">{formatDate(training.date)}</span>
@@ -591,7 +580,7 @@ export default function ProgramDetailPage() {
 																						{training.trainingExercises!.length} ex
 																					</Badge>
 																				)}
-																			</button>
+																			</CollapsibleRowTrigger>
 																		</CollapsibleTrigger>
 																		<div className="flex gap-2 shrink-0">
 																			<Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => openEditTraining(training)}>Edit</Button>

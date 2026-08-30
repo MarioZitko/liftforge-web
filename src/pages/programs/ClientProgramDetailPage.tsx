@@ -5,6 +5,7 @@ import ProgramsApiClient from "@/api/programs/programs.api";
 import { Program } from "@/api/programs/programs.types";
 import { ProgramGrid } from "./components/ProgramGrid";
 import { ViewToggle } from "./components/ViewToggle";
+import { CollapsibleRowTrigger } from "@/components/shared/Programs/CollapsibleRowTrigger";
 import { showError } from "@/components/shared/utils/toast.util";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ import {
 import { PageLoader } from "@/components/page/PageLoader";
 import { useToggleSet } from "@/hooks/useToggleSet";
 import { formatDate } from "@/lib/date";
-import { ChevronDown, ChevronRight, Dumbbell } from "lucide-react";
+import { Dumbbell } from "lucide-react";
 import { useProgramView } from "@/hooks/useProgramView";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -114,12 +115,7 @@ export default function ClientProgramDetailPage() {
 							<CardHeader className="pb-2">
 								<div className="flex items-center justify-between">
 									<CollapsibleTrigger asChild>
-										<button className="flex items-center gap-2 text-left flex-1 hover:opacity-80">
-											{openBlocks.has(block.id) ? (
-												<ChevronDown className="w-4 h-4 shrink-0" />
-											) : (
-												<ChevronRight className="w-4 h-4 shrink-0" />
-											)}
+										<CollapsibleRowTrigger open={openBlocks.has(block.id)} iconClassName="w-4 h-4">
 											<div>
 												<CardTitle className="text-base">{block.name}</CardTitle>
 												{block.description && (
@@ -128,7 +124,7 @@ export default function ClientProgramDetailPage() {
 													</p>
 												)}
 											</div>
-										</button>
+										</CollapsibleRowTrigger>
 									</CollapsibleTrigger>
 									<Badge variant="outline" className="text-xs ml-4 shrink-0">
 										{block.weeks.length} week{block.weeks.length !== 1 ? "s" : ""}
@@ -152,12 +148,7 @@ export default function ClientProgramDetailPage() {
 											>
 												<div className="flex items-center justify-between px-4 py-2">
 													<CollapsibleTrigger asChild>
-														<button className="flex items-center gap-2 text-left flex-1 hover:opacity-80">
-															{openWeeks.has(week.id) ? (
-																<ChevronDown className="w-3 h-3 shrink-0" />
-															) : (
-																<ChevronRight className="w-3 h-3 shrink-0" />
-															)}
+														<CollapsibleRowTrigger open={openWeeks.has(week.id)} iconClassName="w-3 h-3">
 															<span className="font-medium text-sm">{week.name}</span>
 															<Badge variant="secondary" className="text-xs">
 																Week {week.number}
@@ -166,7 +157,7 @@ export default function ClientProgramDetailPage() {
 																{week.trainings.length} session
 																{week.trainings.length !== 1 ? "s" : ""}
 															</span>
-														</button>
+														</CollapsibleRowTrigger>
 													</CollapsibleTrigger>
 												</div>
 
@@ -186,12 +177,10 @@ export default function ClientProgramDetailPage() {
 																<div className="bg-muted/30 rounded">
 																	<div className="flex items-center justify-between px-3 py-2">
 																		<CollapsibleTrigger asChild>
-																			<button className="flex items-center gap-2 text-left flex-1 hover:opacity-80">
-																				{openTrainings.has(training.id) ? (
-																					<ChevronDown className="w-3 h-3 shrink-0 text-muted-foreground" />
-																				) : (
-																					<ChevronRight className="w-3 h-3 shrink-0 text-muted-foreground" />
-																				)}
+																			<CollapsibleRowTrigger
+																				open={openTrainings.has(training.id)}
+																				iconClassName="w-3 h-3 text-muted-foreground"
+																			>
 																				<Dumbbell className="w-3 h-3 text-muted-foreground" />
 																				<span className="text-sm font-medium">{training.name}</span>
 																				<span className="text-xs text-muted-foreground">{formatDate(training.date)}</span>
@@ -200,7 +189,7 @@ export default function ClientProgramDetailPage() {
 																						{training.trainingExercises!.length} ex
 																					</Badge>
 																				)}
-																			</button>
+																			</CollapsibleRowTrigger>
 																		</CollapsibleTrigger>
 																		<Button
 																			size="sm"

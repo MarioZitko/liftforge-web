@@ -109,7 +109,8 @@ string.
 
 **Known duplicated strings to consolidate first if you touch these files:**
 - `iconBtnCls`-style inline strings independently defined in `src/pages/programs/components/ProgramGrid.tsx` and `src/pages/programs/components/SessionCell.tsx` with *different* values for what's meant to be the same icon-button style — this is exactly the bug class the component layer exists to prevent. If you touch either file, pull this into one shared `IconButton` component instead of adding a third copy.
-- The repeated `<button className="flex items-center gap-2 text-left flex-1 hover:opacity-80">` block in `ClientProgramDetailPage.tsx` and `ProgramDetailPage.tsx` (3 copies each, 6 total) — same fix.
+
+**Resolved:** the repeated `<button className="flex items-center gap-2 text-left flex-1 hover:opacity-80">` block that used to appear 3 times each in `ClientProgramDetailPage.tsx` and `ProgramDetailPage.tsx` (6 copies total) is now `src/components/shared/Programs/CollapsibleRowTrigger.tsx` (Issue 70) — use it for any new collapsible row trigger in the program-detail views instead of inlining the button again.
 
 ## Legitimate exceptions
 
