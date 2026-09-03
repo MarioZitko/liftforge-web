@@ -6,6 +6,7 @@ import {
 } from "@/api/users/users.types";
 import { showError, showSuccess } from "@/components/shared/utils/toast.util";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -169,16 +177,18 @@ export default function UserFormModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Role</FormLabel>
-                  <FormControl>
-                    <select
-                      className="w-full rounded border border-input bg-background text-foreground px-2 py-2"
-                      {...field}
-                    >
-                      <option value="CLIENT">Client</option>
-                      <option value="COACH">Coach</option>
-                      <option value="ADMIN">Admin</option>
-                    </select>
-                  </FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="CLIENT">Client</SelectItem>
+                      <SelectItem value="COACH">Coach</SelectItem>
+                      <SelectItem value="ADMIN">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -190,11 +200,9 @@ export default function UserFormModal({
               render={({ field }) => (
                 <FormItem className="flex items-center gap-2">
                   <FormControl>
-                    <Input
-                      type="checkbox"
+                    <Checkbox
                       checked={field.value}
-                      onChange={field.onChange}
-                      className="mr-2"
+                      onChange={() => field.onChange(!field.value)}
                     />
                   </FormControl>
                   <FormLabel className="m-0">Email Verified</FormLabel>

@@ -1,6 +1,14 @@
 import { TrainingBlock, TrainingWeekSummary } from "@/api/training-block/training-block.types";
 import { Training } from "@/api/training/training.types";
 import { IconButton } from "@/components/shared/IconButton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/date";
 import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
@@ -110,147 +118,145 @@ function BlockGrid({
       </div>
 
       {/* Scrollable grid */}
-      <div className="overflow-x-auto">
-        <table className="border-collapse w-full">
-          <thead>
-            <tr>
-              {/* Row-label column */}
-              <th className={cn(subHeaderCls, "sticky left-0 z-10 w-10 min-w-[40px] p-0")} />
+      <Table className="border-collapse w-full">
+        <TableHeader className="[&_tr]:!border-b-0">
+          <TableRow className="hover:bg-transparent">
+            {/* Row-label column */}
+            <TableHead className={cn(subHeaderCls, "sticky left-0 z-10 w-10 min-w-[40px] h-auto px-0")} />
 
-              {weeks.map((week) => {
-                const firstDate = week.trainings[0]?.date;
-                const lastDate = week.trainings[week.trainings.length - 1]?.date;
-                return (
-                  <th
-                    key={week.id}
-                    className={cn(
-                      subHeaderCls,
-                      "p-3 text-left min-w-[220px] border-l align-top",
-                      headerBorderCls
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="font-bold text-xs uppercase tracking-wide">
-                          {week.name}
-                        </div>
-                        <div className="text-primary-foreground/70 text-[11px] mt-0.5">
-                          Week #{week.number}
-                          {firstDate && (
-                            <span className="ml-2">
-                              {formatDate(firstDate)}
-                              {lastDate && lastDate !== firstDate
-                                ? ` – ${formatDate(lastDate)}`
-                                : ""}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-primary-foreground/50 text-[10px] mt-0.5">
-                          {week.trainings.length} session
-                          {week.trainings.length !== 1 ? "s" : ""}
-                        </div>
-                      </div>
-                      {actions && (
-                        <div className="flex items-center gap-0.5 shrink-0 mt-0.5">
-                          <IconButton
-                            tone="header"
-                            size="sm"
-                            onClick={() => actions.onEditWeek(week, block.id)}
-                            title="Edit week"
-                          >
-                            <Pencil className="w-3 h-3" />
-                          </IconButton>
-                          <IconButton
-                            tone="header"
-                            size="sm"
-                            onClick={() => actions.onDuplicateWeek(week, block.id)}
-                            title="Duplicate week"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </IconButton>
-                          <IconButton
-                            tone="header"
-                            size="sm"
-                            destructive
-                            onClick={() => actions.onDeleteWeek(week, block.id)}
-                            title="Delete week"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </IconButton>
-                        </div>
-                      )}
-                    </div>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-
-          <tbody>
-            {maxSessions === 0 ? (
-              <tr>
-                <td
-                  colSpan={weeks.length + 1}
-                  className="text-center text-sm text-muted-foreground p-6"
-                >
-                  No sessions added yet.
-                </td>
-              </tr>
-            ) : (
-              Array.from({ length: maxSessions }, (_, slotIdx) => (
-                <tr
-                  key={slotIdx}
+            {weeks.map((week) => {
+              const firstDate = week.trainings[0]?.date;
+              const lastDate = week.trainings[week.trainings.length - 1]?.date;
+              return (
+                <TableHead
+                  key={week.id}
                   className={cn(
-                    "border-t border-border",
-                    slotIdx % 2 === 1 ? "bg-muted/20" : "bg-background"
+                    subHeaderCls,
+                    "h-auto p-3 text-left min-w-[220px] border-l align-top whitespace-normal",
+                    headerBorderCls
                   )}
                 >
-                  {/* Slot label */}
-                  <td className="bg-muted sticky left-0 z-10 p-2 text-center align-top border-r border-border">
-                    <span className="text-[11px] font-semibold text-muted-foreground">
-                      {slotIdx + 1}
-                    </span>
-                  </td>
-
-                  {weeks.map((week) => {
-                    const session: Training | undefined = week.trainings[slotIdx];
-                    return (
-                      <td
-                        key={week.id}
-                        className="p-3 align-top border-l border-border min-w-[220px] max-w-[280px]"
-                      >
-                        {session ? (
-                          <SessionCell
-                            session={session}
-                            variant={variant}
-                            onSessionClick={onSessionClick}
-                            onEditSession={actions?.onEditSession}
-                            onDeleteSession={actions?.onDeleteSession}
-                            onDuplicateSession={actions?.onDuplicateSession}
-                            forceExpanded={expandAll ? true : undefined}
-                          />
-                        ) : (
-                          actions ? (
-                            <button
-                              onClick={() => actions.onAddSession(week.id)}
-                              className="text-[11px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                            >
-                              <Plus className="w-3 h-3" />
-                              Add session
-                            </button>
-                          ) : (
-                            <span className="text-xs text-muted-foreground italic">—</span>
-                          )
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-bold text-xs uppercase tracking-wide">
+                        {week.name}
+                      </div>
+                      <div className="text-primary-foreground/70 text-[11px] mt-0.5">
+                        Week #{week.number}
+                        {firstDate && (
+                          <span className="ml-2">
+                            {formatDate(firstDate)}
+                            {lastDate && lastDate !== firstDate
+                              ? ` – ${formatDate(lastDate)}`
+                              : ""}
+                          </span>
                         )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                      </div>
+                      <div className="text-primary-foreground/50 text-[10px] mt-0.5">
+                        {week.trainings.length} session
+                        {week.trainings.length !== 1 ? "s" : ""}
+                      </div>
+                    </div>
+                    {actions && (
+                      <div className="flex items-center gap-0.5 shrink-0 mt-0.5">
+                        <IconButton
+                          tone="header"
+                          size="sm"
+                          onClick={() => actions.onEditWeek(week, block.id)}
+                          title="Edit week"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </IconButton>
+                        <IconButton
+                          tone="header"
+                          size="sm"
+                          onClick={() => actions.onDuplicateWeek(week, block.id)}
+                          title="Duplicate week"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </IconButton>
+                        <IconButton
+                          tone="header"
+                          size="sm"
+                          destructive
+                          onClick={() => actions.onDeleteWeek(week, block.id)}
+                          title="Delete week"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </IconButton>
+                      </div>
+                    )}
+                  </div>
+                </TableHead>
+              );
+            })}
+          </TableRow>
+        </TableHeader>
+
+        <TableBody>
+          {maxSessions === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={weeks.length + 1}
+                className="text-center text-sm text-muted-foreground p-6"
+              >
+                No sessions added yet.
+              </TableCell>
+            </TableRow>
+          ) : (
+            Array.from({ length: maxSessions }, (_, slotIdx) => (
+              <TableRow
+                key={slotIdx}
+                className={cn(
+                  "!border-t !border-b-0 border-border hover:bg-transparent",
+                  slotIdx % 2 === 1 ? "bg-muted/20" : "bg-background"
+                )}
+              >
+                {/* Slot label */}
+                <TableCell className="bg-muted sticky left-0 z-10 p-2 text-center align-top border-r border-border">
+                  <span className="text-[11px] font-semibold text-muted-foreground">
+                    {slotIdx + 1}
+                  </span>
+                </TableCell>
+
+                {weeks.map((week) => {
+                  const session: Training | undefined = week.trainings[slotIdx];
+                  return (
+                    <TableCell
+                      key={week.id}
+                      className="p-3 align-top border-l border-border min-w-[220px] max-w-[280px] whitespace-normal"
+                    >
+                      {session ? (
+                        <SessionCell
+                          session={session}
+                          variant={variant}
+                          onSessionClick={onSessionClick}
+                          onEditSession={actions?.onEditSession}
+                          onDeleteSession={actions?.onDeleteSession}
+                          onDuplicateSession={actions?.onDuplicateSession}
+                          forceExpanded={expandAll ? true : undefined}
+                        />
+                      ) : (
+                        actions ? (
+                          <button
+                            onClick={() => actions.onAddSession(week.id)}
+                            className="text-[11px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                          >
+                            <Plus className="w-3 h-3" />
+                            Add session
+                          </button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">—</span>
+                        )
+                      )}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 }

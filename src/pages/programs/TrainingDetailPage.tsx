@@ -343,17 +343,18 @@ export default function TrainingDetailPage() {
 										return (
 											<Popover open={comboOpen} onOpenChange={setComboOpen}>
 												<PopoverTrigger asChild>
-													<button
+													<Button
 														type="button"
+														variant="outline"
 														role="combobox"
 														aria-expanded={comboOpen}
-														className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+														className="w-full justify-between font-normal"
 													>
 														<span className={selected ? "" : "text-muted-foreground"}>
 															{selected ? selected.name : "Select exercise…"}
 														</span>
 														<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-													</button>
+													</Button>
 												</PopoverTrigger>
 												<PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
 													<Command>

@@ -1,4 +1,5 @@
 import { Client } from "@/api/client/client.types";
+import { SelectableCard } from "@/components/shared/SelectableCard";
 import { cn } from "@/lib/utils";
 import { ClientColor } from "../hooks/useClientColors";
 
@@ -22,7 +23,9 @@ export function ClientFilterBar({
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <span className="text-xs text-muted-foreground font-medium shrink-0">Clients:</span>
-      <button
+      <SelectableCard
+        variant="pill"
+        selected={allActive}
         onClick={() => {
           // Clear all filters (show everyone)
           clients.forEach((c) => {
@@ -30,24 +33,26 @@ export function ClientFilterBar({
           });
         }}
         className={cn(
-          "px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
+          "px-2.5 py-1",
           allActive
             ? "bg-foreground text-background border-foreground"
             : "bg-muted text-muted-foreground border-transparent hover:border-border",
         )}
       >
         All
-      </button>
+      </SelectableCard>
       {clients.map((client) => {
         const color = getColor(client.id);
         const isActive = activeClientIds.has(client.id);
         const name = client.user?.name ?? client.user?.email ?? "Client";
         return (
-          <button
+          <SelectableCard
             key={client.id}
+            variant="pill"
+            selected={isActive}
             onClick={() => onToggle(client.id)}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
+              "flex items-center gap-1.5 px-2.5 py-1",
               isActive
                 ? `${color.chip} ${color.border}`
                 : "bg-muted/50 text-muted-foreground border-transparent opacity-50 hover:opacity-80",
@@ -55,7 +60,7 @@ export function ClientFilterBar({
           >
             <span className={cn("w-2 h-2 rounded-full shrink-0", color.bg)} />
             {name}
-          </button>
+          </SelectableCard>
         );
       })}
     </div>
