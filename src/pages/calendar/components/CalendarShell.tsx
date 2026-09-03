@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export type CalendarView = "month" | "week";
@@ -73,22 +73,22 @@ export function CalendarShell({
           {actions}
 
           {/* View toggle */}
-          <div className="flex items-center rounded-lg border border-border overflow-hidden">
-          {(["month", "week"] as CalendarView[]).map((v) => (
-            <button
-              key={v}
-              onClick={() => onViewChange(v)}
-              className={cn(
-                "px-3 py-1.5 text-xs font-medium capitalize transition-colors",
-                view === v
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:bg-muted",
-              )}
-            >
-              {v}
-            </button>
-          ))}
-          </div>
+          <ToggleGroup
+            type="single"
+            value={view}
+            onValueChange={(v) => v && onViewChange(v as CalendarView)}
+            className="rounded-lg border border-border overflow-hidden"
+          >
+            {(["month", "week"] as CalendarView[]).map((v) => (
+              <ToggleGroupItem
+                key={v}
+                value={v}
+                className="h-auto py-1.5 text-xs font-medium capitalize text-muted-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+              >
+                {v}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
         </div>
       </div>
 

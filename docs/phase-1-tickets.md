@@ -262,9 +262,9 @@ legitimate exception (`@dnd-kit` requires it) — don't touch that one.
 
 ### Definition of Done
 
-- [ ] Every file listed above uses the shadcn `ui/` component instead of the raw HTML element
+- [x] Every file listed above uses the shadcn `ui/` component instead of the raw HTML element
   named.
-- [ ] No visual regression on any affected screen (spot-check each one).
+- [x] No visual regression on any affected screen (spot-check each one).
 
 ---
 

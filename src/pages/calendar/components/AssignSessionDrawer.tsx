@@ -4,6 +4,7 @@ import ClientProgramApiClient from "@/api/client-program/client-program.api";
 import { ClientProgramAssignment } from "@/api/client-program/client-program.types";
 import TrainingApiClient from "@/api/training/training.api";
 import { Client } from "@/api/client/client.types";
+import { SelectableCard } from "@/components/shared/SelectableCard";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -12,6 +13,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { CalendarDays, ChevronDown, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -26,6 +28,19 @@ interface AssignSessionDrawerProps {
 }
 
 type Step = "client" | "program" | "week" | "name";
+
+function BackLink({ onClick }: { onClick: () => void }) {
+  return (
+    <Button
+      variant="link"
+      size="sm"
+      className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground hover:no-underline"
+      onClick={onClick}
+    >
+      ← Back
+    </Button>
+  );
+}
 
 export function AssignSessionDrawer({
   open,
@@ -143,11 +158,7 @@ export function AssignSessionDrawer({
                 <p className="text-sm text-muted-foreground">No clients assigned to you yet.</p>
               )}
               {clients.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => handleSelectClient(c)}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 text-left transition-colors"
-                >
+                <SelectableCard key={c.id} onClick={() => handleSelectClient(c)}>
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
                     {(c.user?.name ?? c.user?.email ?? "?")[0].toUpperCase()}
                   </div>
@@ -155,7 +166,7 @@ export function AssignSessionDrawer({
                     <p className="text-sm font-medium">{c.user?.name ?? "—"}</p>
                     <p className="text-xs text-muted-foreground">{c.user?.email}</p>
                   </div>
-                </button>
+                </SelectableCard>
               ))}
               {isLoadingPrograms && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground mx-auto mt-4" />}
             </div>
@@ -165,21 +176,22 @@ export function AssignSessionDrawer({
           {step === "program" && (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 mb-1">
-                <button onClick={() => setStep("client")} className="text-xs text-muted-foreground hover:text-foreground">← Back</button>
+                <BackLink onClick={() => setStep("client")} />
                 <p className="text-sm font-medium">Select a program</p>
               </div>
               {programs.length === 0 && (
                 <p className="text-sm text-muted-foreground">No active programs for this client.</p>
               )}
               {programs.map((p) => (
-                <button
+                <SelectableCard
                   key={p.id}
+                  variant="card"
                   onClick={() => handleSelectProgram(p)}
-                  className="flex flex-col items-start p-3 rounded-lg border border-border hover:bg-muted/50 text-left transition-colors"
+                  className="flex flex-col items-start hover:bg-muted/50"
                 >
                   <p className="text-sm font-medium">{p.program?.name ?? p.name}</p>
                   <p className="text-xs text-muted-foreground capitalize">{p.status}</p>
-                </button>
+                </SelectableCard>
               ))}
               {isLoadingBlocks && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground mx-auto mt-4" />}
             </div>
@@ -189,21 +201,21 @@ export function AssignSessionDrawer({
           {step === "week" && (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 mb-1">
-                <button onClick={() => setStep("program")} className="text-xs text-muted-foreground hover:text-foreground">← Back</button>
+                <BackLink onClick={() => setStep("program")} />
                 <p className="text-sm font-medium">Select a training week</p>
               </div>
               {blocks.map((block) => (
                 <div key={block.id}>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-1 mt-2">{block.name}</p>
                   {block.weeks?.map((week) => (
-                    <button
+                    <SelectableCard
                       key={week.id}
                       onClick={() => handleSelectWeek(week)}
-                      className="w-full flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 text-left transition-colors mb-1"
+                      className="w-full justify-between mb-1"
                     >
                       <p className="text-sm font-medium">{week.name}</p>
                       <p className="text-xs text-muted-foreground">Week {week.number}</p>
-                    </button>
+                    </SelectableCard>
                   ))}
                 </div>
               ))}
@@ -214,7 +226,7 @@ export function AssignSessionDrawer({
           {step === "name" && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2 mb-1">
-                <button onClick={() => setStep("week")} className="text-xs text-muted-foreground hover:text-foreground">← Back</button>
+                <BackLink onClick={() => setStep("week")} />
                 <p className="text-sm font-medium">Name your session</p>
               </div>
               <div className="rounded-lg border border-border p-3 bg-muted/30 text-xs text-muted-foreground space-y-0.5">
@@ -222,14 +234,13 @@ export function AssignSessionDrawer({
                 <p><span className="font-medium">Program:</span> {selectedProgram?.program?.name ?? selectedProgram?.name}</p>
                 <p><span className="font-medium">Week:</span> {selectedWeek?.name}</p>
               </div>
-              <input
+              <Input
                 autoFocus
                 type="text"
                 placeholder="e.g. Upper Body A"
                 value={sessionName}
                 onChange={(e) => setSessionName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
           )}

@@ -4,6 +4,7 @@ import ClientProgramApiClient from "@/api/client-program/client-program.api";
 import { ClientProgramAssignment } from "@/api/client-program/client-program.types";
 import TrainingApiClient from "@/api/training/training.api";
 import { Client } from "@/api/client/client.types";
+import { SelectableCard } from "@/components/shared/SelectableCard";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { CalendarDays, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -161,18 +163,14 @@ export function ScheduleProgramDialog({
             <p className="text-sm font-medium">Client</p>
             <div className="flex flex-wrap gap-2">
               {clients.map((c) => (
-                <button
+                <SelectableCard
                   key={c.id}
+                  variant="pill"
+                  selected={selectedClient?.id === c.id}
                   onClick={() => handleSelectClient(c)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-full text-sm border transition-all",
-                    selectedClient?.id === c.id
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "border-border hover:bg-muted",
-                  )}
                 >
                   {c.user?.name ?? c.user?.email ?? "Client"}
-                </button>
+                </SelectableCard>
               ))}
               {isLoadingPrograms && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground self-center" />}
             </div>
@@ -187,21 +185,18 @@ export function ScheduleProgramDialog({
               )}
               <div className="flex flex-col gap-1.5">
                 {programs.map((p) => (
-                  <button
+                  <SelectableCard
                     key={p.id}
+                    variant="card"
+                    selected={selectedProgram?.id === p.id}
                     onClick={() => handleSelectProgram(p)}
-                    className={cn(
-                      "flex items-center justify-between px-3 py-2.5 rounded-lg border text-left transition-all",
-                      selectedProgram?.id === p.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:bg-muted",
-                    )}
+                    className="flex items-center justify-between py-2.5"
                   >
                     <span className="text-sm font-medium">{p.program?.name ?? p.name}</span>
                     <span className={cn("text-xs capitalize px-1.5 py-0.5 rounded-full",
                       p.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"
                     )}>{p.status}</span>
-                  </button>
+                  </SelectableCard>
                 ))}
                 {isLoadingBlocks && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground mx-auto" />}
               </div>
@@ -213,11 +208,10 @@ export function ScheduleProgramDialog({
             <>
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium">Start date</p>
-                <input
+                <Input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 w-full"
                 />
               </div>
 
@@ -225,19 +219,15 @@ export function ScheduleProgramDialog({
                 <p className="text-sm font-medium">Training days</p>
                 <div className="flex gap-1.5">
                   {DAY_LABELS.map((d) => (
-                    <button
+                    <SelectableCard
                       key={d.value}
+                      variant="circle"
+                      selected={trainingDays.includes(d.value)}
                       title={d.fullLabel}
                       onClick={() => toggleDay(d.value)}
-                      className={cn(
-                        "w-9 h-9 rounded-full text-xs font-semibold border transition-all",
-                        trainingDays.includes(d.value)
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "border-border text-muted-foreground hover:bg-muted",
-                      )}
                     >
                       {d.label}
-                    </button>
+                    </SelectableCard>
                   ))}
                 </div>
                 {trainingDays.length === 0 && (
