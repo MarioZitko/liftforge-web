@@ -290,12 +290,67 @@ Follow [`.claude/docs/03-testing.md`](../.claude/docs/03-testing.md)'s plan: Vit
 `@testing-library/react` + `jsdom`; mock at the `SomeApiClient.getInstance()` boundary rather than
 globally mocking `axios`.
 
+### Decision (recorded)
+
+Added `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/dom`
+(peer dep pulled in transitively by `@testing-library/react`, not listed in the original ticket
+but required for it to resolve), `@testing-library/user-event`, and `jsdom` as dev dependencies,
+plus a `test`/`test:watch` script pair (`vitest run` / `vitest`) — `run` mode so `yarn test`
+exits with a real pass/fail status instead of parking in watch mode. Config lives in a standalone
+`vitest.config.ts` rather than a `test` block bolted onto `vite.config.ts`, so the Tailwind Vite
+plugin isn't loaded for the test environment. `src/setupTests.ts` wires up
+`@testing-library/jest-dom`'s matchers.
+
+`jsdom` is pinned to `^26` rather than latest (`30.x`): latest pulls in an `undici` version whose
+`engines.node` requires `>=22.19`, newer than the `22.15.0` available locally, which made `yarn
+add` fail outright. `jsdom@26` has no `undici` dependency at all, so this isn't a temporary
+workaround with a ticking clock — it just doesn't hit the same constraint. Worth revisiting only if
+a future `jsdom` upgrade is needed for an unrelated reason.
+
+Wrote the three required test files:
+- `src/lib/base.api.test.ts` — since axios doesn't expose a public way to invoke a registered
+  interceptor, tests call `axiosInstance.interceptors.response.handlers[0].rejected` directly
+  (confirmed against axios's own `InterceptorManager` source, which stores handlers in exactly
+  that internal array). Covers: 401 outside a public page clears `useUserStore` and sets
+  `window.location.href` to `/login`; 401 while already on a public path does neither; the
+  rejected value is the backend's `message` string as-is for a plain string, and joined with `\n`
+  for an array. The redirect (`window.location.href = "/login"`) is a synchronous statement in
+  `base.api.ts`, asserted directly; only the store clear (`logout()`) is deferred behind the
+  interceptor's `import("@/store/userStore").then(...)`, so that one assertion uses `vi.waitFor`
+  to poll for it after the interceptor's own returned promise rejects.
+- `src/lib/RequireRole.test.tsx` — renders through a real `MemoryRouter`/`Routes` (rather than
+  shallow-rendering `<Navigate>`) so the redirect target's own route element is asserted on
+  screen, covering: no user → `/login`, disallowed role → `/dashboard`, allowed role → children
+  render. One of the three (the "renders children" case) reliably logs a React "not wrapped in
+  act(...)" warning for `RequireRole`/`MemoryRouter` — traced to `react-router-dom` v7 scheduling
+  some of `MemoryRouter`/`Routes`'s internal state syncing via `React.startTransition`, which
+  resolves outside `render()`'s synchronous `act()` window on this render path specifically. Ruled
+  out `useUserStore`'s persist rehydration as the cause first (an async `localStorage` read that
+  seemed like a more obvious suspect) by waiting on `persist.hasHydrated()`/`onFinishHydration`
+  before rendering — the warning persisted unchanged, and `hasHydrated()` was already `true` by
+  that point, disproving it. Filtered with a `console.error` spy scoped to this file's `describe`
+  block (not global in `setupTests.ts`, which would risk masking a real missing-`act()` bug in an
+  unrelated future test) that only swallows this exact message shape.
+- `src/components/shared/DataTable/ServerTable.test.tsx` — covers row rendering, the loading and
+  empty states, search input triggering `setQuery` with `pageNumber` reset to 1, sort-header click
+  behavior (first click sets `ascending: true`, clicking the already-sorted column flips it), and
+  pagination (`Previous` disabled on page 1, `Next` calling `setQuery` with the incremented page).
+  Column-header queries use `getByRole("columnheader", { name: ... })` instead of `getByText`,
+  since the sort arrow (`↑`/`↓`) renders as a second text node inside the same `<th>` once a
+  column is sorted, which breaks `getByText`'s exact-text matching. Filter (`Select`) dropdown
+  interaction isn't covered — opening a Radix `Select` needs pointer-capture/`scrollIntoView`
+  polyfills jsdom doesn't provide out of the box, and it's not part of this ticket's required
+  coverage (rendering/pagination behavior).
+
+Updated [`.claude/docs/03-testing.md`](../.claude/docs/03-testing.md) to replace the "no test setup
+exists" framing with the current state and a note on what to test next.
+
 ### Definition of Done
 
-- [ ] `npm run test` (or `yarn test`) runs Vitest successfully.
-- [ ] At least one passing test each for: `base.api.ts`'s 401-redirect interceptor behavior,
+- [x] `npm run test` (or `yarn test`) runs Vitest successfully. (15 tests, 3 files, all passing.)
+- [x] At least one passing test each for: `base.api.ts`'s 401-redirect interceptor behavior,
   `RequireRole`'s role-gating logic, `ServerTable`'s rendering/pagination behavior.
-- [ ] [`.claude/docs/03-testing.md`](../.claude/docs/03-testing.md) updated to reflect that tests
+- [x] [`.claude/docs/03-testing.md`](../.claude/docs/03-testing.md) updated to reflect that tests
   now exist, replacing the "there is no test setup at all" framing with the current state.
 
 ---
